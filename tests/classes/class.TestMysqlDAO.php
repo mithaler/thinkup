@@ -92,6 +92,14 @@ class TestMysqlDAO extends PDODAO implements TestDAO {
         return $this->getDataRowsAsObjects($stmt, 'TestData');
     }
 
+    // test select many records with limit
+    public function selectRecordsWithLimit($limit) {
+        $sql = "select id, test_name, test_id from #prefix#test_table order by test_id LIMIT :limit";
+        $stmt = $this->execute($sql, array(':limit' => $limit));
+        return $this->getDataRowsAsObjects($stmt, 'TestData');
+    }
+
+
     // test select many records as array
     public function selectRecordsAsArrays($id) {
         $sql = "select id, test_name, test_id from #prefix#test_table where test_id >= :test_id order by test_id";

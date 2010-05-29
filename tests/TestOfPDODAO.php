@@ -163,6 +163,12 @@ class TestOfPDODAO extends ThinkTankUnitTestCase {
         $this->assertEqual($data_obj['test_id'], '3');
     }
 
+    function testSelectRecordsAsArrayWithLimit() {
+        $testdao = DAOFactory::getDAO('TestDAO');
+        $data_obj = $testdao->selectRecordsWithLimit(2);
+        $this->assertEqual(count($data_obj), 2, 'should have limited to two records');
+    }
+    
     function testSelectRecords() {
         $testdao = DAOFactory::getDAO('TestDAO');
 

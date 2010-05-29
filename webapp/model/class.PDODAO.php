@@ -60,7 +60,18 @@ abstract class PDODAO {
         $sql = preg_replace("/#prefix#/", $this->prefix, $sql);
         $sql = preg_replace("/#gmt_offset#/", $this->gmt_offset, $sql);
         $stmt = self::$PDO->prepare($sql);
-        $stmt->execute($binds);
+        if(! isset($binds[0])) {
+            foreach ($binds as $key => $value) {
+                if(is_int($value)) {
+                    $stmt->bindValue($key, $value, PDO::PARAM_INT);
+                } else {
+                    $stmt->bindValue($key, $value, PDO::PARAM_STR);
+                }
+           }
+           $stmt->execute();
+        } else {
+            $stmt->execute($binds);
+        }
         return $stmt;
     }
     
