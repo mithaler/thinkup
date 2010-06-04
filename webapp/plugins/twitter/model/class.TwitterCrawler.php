@@ -204,10 +204,6 @@ class TwitterCrawler {
             } elseif (substr($u, 0, strlen('http://flic.kr/')) == 'http://flic.kr/') {
                 $is_image = 1;
             }
-            if ($ld->insert($u, $eurl, $title, $tweet['post_id'], $is_image))
-            $this->logger->logStatus("Inserted ".$u." (".$eurl.", ".$is_image."),  into links table", get_class($this));
-            else
-            $this->logger->logStatus("Did NOT insert ".$u." (".$eurl.") into links table", get_class($this));
 
         }
 
@@ -353,7 +349,7 @@ class TwitterCrawler {
         $status_message = "";
         // Get owner's mentions
         if ($this->api->available && $this->api->available_api_calls_for_crawler > 0) {
-            # Get the most recent mentions
+            # Get the most recent retweets
             $rtsofme = $this->api->cURL_source['retweets_of_me'];
             list($cURL_status, $twitter_data) = $this->api->apiRequest($rtsofme);
             if ($cURL_status == 200) {
@@ -398,7 +394,7 @@ class TwitterCrawler {
                         if (isset($tweet["post_id"]) ) {
                             $tweet['in_retweet_of_post_id'] = $status_id;
                             if ( $pd->addPost($tweet, $this->owner_object, $this->logger) > 0) {
-                                $this->logger->logStatus("Inserted new-style retweet from retweeted_by", get_class($this));
+                                $this->logger->logStatus("Inserted new-style retweet by ".$tweet["user_name"]." from retweeted_by API call", get_class($this));
                                 //expand and insert links contained in tweet
                                 $this->processTweetURLs($tweet);
                                 if ($tweet['user_id'] != $this->owner_object->user_id) { //don't update owner info from retweet
@@ -452,12 +448,12 @@ class TwitterCrawler {
                         $pd = new PostDAO($this->db, $this->logger);
                         foreach ($tweets as $tweet) {
                             if (RetweetDetector::isRetweet($tweet['post_text'], $this->owner_object->username)) {
-                                $this->logger->logStatus("Retweet found, ".substr($tweet['post_text'], 0, 50)."... ", get_class($this));
+                                $this->logger->logStatus("Retweet by ".$tweet['user_name']. " found, ".substr($tweet['post_text'], 0, 50)."... ", get_class($this));
                                 if ( RetweetDetector::isRetweetOfTweet($tweet["post_text"], $retweeted_status["post_text"]) ){
                                     $tweet['in_retweet_of_post_id'] = $retweeted_status_id;
-                                    $this->logger->logStatus("Retweet original status ID found: ".$retweeted_status_id, get_class($this));
+                                    $this->logger->logStatus("Retweet by ".$tweet['user_name']." of ".$this->owner_object->username." original status ID found: ".$retweeted_status_id, get_class($this));
                                 } else {
-                                    $this->logger->logStatus("Retweet original status ID NOT found: ".$retweeted_status["post_text"]." NOT a RT of: ". $tweet["post_text"], get_class($this));
+                                    $this->logger->logStatus("Retweet by ".$tweet['user_name']." of ".$this->owner_object->username." original status ID NOT found: ".$retweeted_status["post_text"]." NOT a RT of: ". $tweet["post_text"], get_class($this));
                                 }
                             }
                             if ($pd->addPost($tweet, $user_with_retweet, $this->logger) > 0) {
