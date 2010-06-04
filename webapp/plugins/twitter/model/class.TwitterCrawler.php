@@ -391,21 +391,8 @@ class TwitterCrawler {
                     $tweets = $this->api->parseXML($twitter_data);
                     $pd = new PostDAO($this->db, $this->logger);
                     foreach ($tweets as $tweet) {
-                        if (isset($tweet["post_id"]) ) {
-                            $tweet['in_retweet_of_post_id'] = $status_id;
-                            if ( $pd->addPost($tweet, $this->owner_object, $this->logger) > 0) {
-                                $this->logger->logStatus("Inserted new-style retweet by ".$tweet["user_name"]." from retweeted_by API call", get_class($this));
-                                //expand and insert links contained in tweet
-                                $this->processTweetURLs($tweet);
-                                if ($tweet['user_id'] != $this->owner_object->user_id) { //don't update owner info from retweet
-                                    $u = new User($tweet, 'retweets');
-                                    $this->ud->updateUser($u);
-                                }
-                            }
-                        } else { //tweet didn't come in payload, only user did, so fetch user timeline to get retweets
-                            $user_with_retweet = new User($tweet, 'retweets');
-                            $this->fetchUserTimelineForRetweet($status, $user_with_retweet);
-                        }
+                        $user_with_retweet = new User($tweet, 'retweets');
+                        $this->fetchUserTimelineForRetweet($status, $user_with_retweet);
                     }
                 } catch (Exception $e) {
                     $status_message = 'Could not parse retweeted_by XML for $this->owner_object->username';

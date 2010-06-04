@@ -178,9 +178,9 @@ class TestOfTwitterCrawler extends ThinkTankUnitTestCase {
         $pdao = new PostDAO($this->db);
         $tc->fetchRetweetsOfInstanceUser();
         $post = $pdao->getPost(14947487415);
-        $this->assertEqual($post->retweet_count_cache, 6, '6 retweets loaded');
+        $this->assertEqual($post->retweet_count_cache, 3, '3 retweets loaded');
         $retweets = $pdao->getRetweetsOfPost(14947487415, true);
-        $this->assertEqual(sizeof($retweets), 6, '6 retweets loaded');
+        $this->assertEqual(sizeof($retweets), 3, '3 retweets loaded');
 
         //make sure duplicate posts aren't going into the db on next crawler run
         self::setUpInstanceUserGinaTrapani();
@@ -189,9 +189,9 @@ class TestOfTwitterCrawler extends ThinkTankUnitTestCase {
 
         $tc->fetchRetweetsOfInstanceUser();
         $post = $pdao->getPost(14947487415);
-        $this->assertEqual($post->retweet_count_cache, 6, '6 retweets loaded');
+        $this->assertEqual($post->retweet_count_cache, 3, '3 retweets loaded');
         $retweets = $pdao->getRetweetsOfPost(14947487415, true);
-        $this->assertEqual(sizeof($retweets), 6, '6 retweets loaded');
+        $this->assertEqual(sizeof($retweets), 3, '3 retweets loaded');
     }
 
     //TODO: Test the rest of the TwitterCrawler methods
