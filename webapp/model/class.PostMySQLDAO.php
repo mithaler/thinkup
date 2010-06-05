@@ -305,7 +305,7 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
                 ':network'=>$vals['network']
             );
             $ps = $this->execute($q, $vars);
-            
+
             $logger = Logger::getInstance();
             if ($vals['in_reply_to_post_id'] != '' && $this->isPostInDB($vals['in_reply_to_post_id'])) {
                 $this->incrementReplyCountCache($vals['in_reply_to_post_id']);
@@ -324,99 +324,73 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
             return 0;
         }
     }
-    
-    //    function decrementReplyCountCache($post_id) {
-    //        $q = "
-    //            UPDATE
-    //                #prefix#posts
-    //            SET
-    //                mention_count_cache = mention_count_cache - 1
-    //            WHERE
-    //                post_id = ".$post_id."
-    //        ";
-    //        $foo = $this->executeSQL($q);
-    //        return mysql_affected_rows();
-    //    }
-    //
-    //    function getAllPosts($author_id, $count) {
-    //        $q = "
-    //            SELECT
-    //                l.*, t.*, pub_date - interval #gmt_offset# hour as adj_pub_date
-    //            FROM
-    //                #prefix#posts t
-    //            LEFT JOIN
-    //                #prefix#links l
-    //            ON t.post_id = l.post_id
-    //            WHERE
-    //                author_user_id = ".$author_id."
-    //            ORDER BY
-    //                pub_date DESC
-    //            LIMIT ".$count.";";
-    //
-    //        $sql_result = $this->executeSQL($q);
-    //        $all_posts = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $all_posts[] = $this->setPostWithLink($row);
-    //        }
-    //        mysql_free_result($sql_result);
-    //        return $all_posts;
-    //    }
-    //
-    //    function getAllPostsByUsername($username) {
-    //
-    //        $q = "
-    //            SELECT
-    //                t.*, pub_date - interval #gmt_offset# hour as adj_pub_date
-    //            FROM
-    //                #prefix#posts t
-    //            WHERE
-    //                author_username = '".$username."'
-    //            ORDER BY
-    //                pub_date ASC";
-    //        $sql_result = $this->executeSQL($q);
-    //        $all_posts = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $all_posts[] = new Post($row);
-    //        }
-    //        mysql_free_result($sql_result);
-    //        return $all_posts;
-    //    }
-    //
-    //    function getTotalPostsByUser($userid) {
-    //        $q = "
-    //            SELECT
-    //                COUNT(*) as total
-    //            FROM
-    //                #prefix#posts t
-    //            WHERE
-    //                author_user_id = '".$userid."'
-    //            ORDER BY
-    //                pub_date ASC";
-    //        $sql_result = $this->executeSQL($q);
-    //        $row = mysql_fetch_assoc($sql_result);
-    //        return $row["total"];
-    //    }
-    //
-    //    function getStatusSources($author_id) {
-    //        $q = "
-    //            SELECT
-    //                source, count(source) as total
-    //            FROM
-    //                #prefix#posts
-    //            WHERE
-    //                author_user_id = ".$author_id."
-    //            GROUP BY source
-    //            ORDER BY total DESC;";
-    //        $sql_result = $this->executeSQL($q);
-    //        $all_sources = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $all_sources[] = $row;
-    //        }
-    //        mysql_free_result($sql_result);
-    //        return $all_sources;
-    //    }
-    //
-    //
+
+    public function getAllPosts($author_id, $count) {
+        $q = "SELECT l.*, p.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
+        $q .= " FROM #prefix#posts p";
+        $q .= " LEFT JOIN #prefix#links l ";
+        $q .= " ON p.post_id = l.post_id ";
+        $q .= " WHERE author_user_id = :author_id ";
+        $q .= "ORDER BY pub_date DESC ";
+        $q .= "LIMIT :limit";
+
+        $vars = array(
+                ':author_id'=>$author_id,
+                ':limit'=>$count 
+        );
+
+        $ps = $this->execute($q, $vars);
+        $all_rows = $this->getDataRowsAsArrays($ps);
+        $posts = array();
+        foreach ($all_rows as $row) {
+            $posts[] = $this->setPostWithLink($row);
+        }
+        return $posts;
+    }
+
+    public function getAllPostsByUsername($username) {
+        $q = "SELECT p.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
+        $q .= "FROM #prefix#posts p ";
+        $q .= "WHERE author_username = :username ";
+        $q .= "ORDER BY pub_date ASC";
+        $vars = array(
+            ':username'=>$username
+        );
+        $ps = $this->execute($q, $vars);
+        $all_rows = $this->getDataRowsAsArrays($ps);
+        $posts = array();
+        foreach ($all_rows as $row) {
+            $posts[] = new Post($row);
+        }
+        return $posts;
+    }
+
+    public function getTotalPostsByUser($user_id) {
+        $q = "SELECT  COUNT(*) as total ";
+        $q .= "FROM #prefix#posts p ";
+        $q .= "WHERE author_user_id = :user_id ";
+        $q .= "ORDER BY pub_date ASC";
+        $vars = array(
+            ':user_id'=>$user_id
+        );
+        $ps = $this->execute($q, $vars);
+        $result = $this->getDataRowAsArray($ps);
+        return $result["total"];
+    }
+
+    public function getStatusSources($author_id) {
+        $q = "SELECT source, count(source) as total ";
+        $q .= "FROM #prefix#posts WHERE ";
+        $q .= "author_user_id = :author_id ";
+        $q .= "GROUP BY source  ORDER BY total DESC;";
+        $vars = array(
+            ':author_id'=>$author_id
+        );
+        $ps = $this->execute($q, $vars);
+        return $this->getDataRowsAsArrays($ps);
+    }
+
+
     //    function getAllMentions($author_username, $count, $network = "twitter") {
     //
     //        $q = " SELECT l.*, t.*, u.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
@@ -586,6 +560,19 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
     //        }
     //        return mysql_affected_rows();
     //    }
+    //    function decrementReplyCountCache($post_id) {
+    //        $q = "
+    //            UPDATE
+    //                #prefix#posts
+    //            SET
+    //                mention_count_cache = mention_count_cache - 1
+    //            WHERE
+    //                post_id = ".$post_id."
+    //        ";
+    //        $foo = $this->executeSQL($q);
+    //        return mysql_affected_rows();
+    //    }
+    //
     //
     //    function getStrayRepliedToPosts($author_id) {
     //        $q = "

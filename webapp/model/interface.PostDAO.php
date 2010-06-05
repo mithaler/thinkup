@@ -81,10 +81,10 @@ interface PostDAO {
      * @return bool true if reply is in the database
      */
     public function isReplyInDB($post_id);
-    
+
     /**
      * Insert post given an array of values
-     * 
+     *
      * Values expected:
      * <code>
      *  $vals['post_id']
@@ -98,9 +98,39 @@ interface PostDAO {
      *  $vals['network']
      *  $vals['in_reply_to_post_id']
      * </code>
-     * 
+     *
      * @param array $vals see above
      * @return int number of posts inserted
      */
     public function addPost($vals);
+
+    /**
+     * Get all posts by an author given an author ID
+     * @param int $author_id
+     * @param string  $network
+     * @param int $count
+     * @return array Posts by author with link set
+     */
+    public function getAllPosts($author_id, $count);
+
+    /**
+     * Get all posts by author given the author's username
+     * @param string $username
+     * @return array Posts by author (no link set)
+     */
+    public function getAllPostsByUsername($username);
+
+    /**
+     * Get count of posts by author user ID
+     * @param int $user_id
+     * @return int total posts
+     */
+    public function getTotalPostsByUser($user_id);
+
+    /**
+     * Get all the sources of an author's posts and their count
+     * @param int $author_id
+     * @return array "source"=>"web", "total"=>15
+     */
+    public function getStatusSources($author_id);
 }

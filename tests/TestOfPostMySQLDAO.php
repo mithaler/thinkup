@@ -74,12 +74,12 @@ class TestOfPostMySQLDAO extends ThinkTankUnitTestCase {
             $counter++;
         }
 
-        //Add photo posts
+        //Add photo posts from Flickr
         $counter = 0;
         while ($counter < 40) {
             $post_id = $counter + 40;
             $pseudo_minute = str_pad($counter, 2, "0", STR_PAD_LEFT);
-            $q = "INSERT INTO tt_posts (post_id, author_user_id, author_username, author_fullname, author_avatar, post_text, source, pub_date, mention_count_cache, retweet_count_cache) VALUES ($post_id, 18, 'shutterbug', 'Shutter Bug', 'avatar.jpg', 'This is image post $counter', 'web', '2006-01-02 00:$pseudo_minute:00', 0, 0);";
+            $q = "INSERT INTO tt_posts (post_id, author_user_id, author_username, author_fullname, author_avatar, post_text, source, pub_date, mention_count_cache, retweet_count_cache) VALUES ($post_id, 18, 'shutterbug', 'Shutter Bug', 'avatar.jpg', 'This is image post $counter', 'Flickr', '2006-01-02 00:$pseudo_minute:00', 0, 0);";
             PDODAO::$PDO->exec($q);
 
             $q = "INSERT INTO tt_links (url, expanded_url, title, clicks, post_id, is_image) VALUES ('http://example.com/".$counter."', 'http://example.com/".$counter.".jpg', '', 0, $post_id, 1);";
@@ -162,171 +162,231 @@ class TestOfPostMySQLDAO extends ThinkTankUnitTestCase {
         parent::tearDown();
     }
 
-//    /**
-//     * Test constructor
-//     */
-//    function testConstructor() {
-//        $dao = new PostMySQLDAO();
-//        $this->assertTrue(isset($dao));
-//    }
-//
-//
-//    /**
-//     * Test getPost on a post that exists
-//     */
-//    function testGetPostExists() {
-//        $dao = new PostMySQLDAO();
-//        $post = $dao->getPost(10);
-//        $this->assertTrue(isset($post));
-//        $this->assertEqual($post->post_text, 'This is post 10');
-//        //link gets set
-//        $this->assertTrue(isset($post->link));
-//        //no link, so link member variables do not get set
-//        $this->assertTrue(!isset($post->link->id));
-//    }
-//
-//    /**
-//     * Test getPost on a post that does not exist
-//     */
-//    function testGetPostDoesNotExist(){
-//        $dao = new PostMySQLDAO();
-//        $post = $dao->getPost(100000001);
-//        $this->assertTrue(!isset($post));
-//    }
-//
-//    /**
-//     * Test getStandaloneReplies
-//     */
-//    function testGetStandaloneReplies() {
-//        $dao = new PostMySQLDAO();
-//        $posts = $dao->getStandaloneReplies('jack', 15);
-//        $this->assertEqual(sizeof($posts), 10);
-//        $this->assertEqual($posts[0]->post_text, 'Hey @ev and @jack should fix Twitter - post 9', "Standalone mention");
-//        $this->assertEqual($posts[0]->author->username, 'user2', "Post author");
-//
-//        $posts = $dao->getStandaloneReplies('ev', 15);
-//        $this->assertEqual(sizeof($posts), 11);
-//        $this->assertEqual($posts[0]->post_text, 'Hey @ev and @jack should fix Twitter - post 9', "Standalone mention");
-//        $this->assertEqual($posts[0]->author->username, 'user2', "Post author");
-//    }
-//
-//    /**
-//     * Test getRepliesToPost
-//     */
-//    function testGetRepliesToPost() {
-//        $dao = new PostMySQLDAO();
-//        $posts = $dao->getRepliesToPost(41);
-//        $this->assertEqual(sizeof($posts), 3);
-//        $this->assertEqual($posts[0]->post_text, '@shutterbug Nice shot!', "post reply");
-//        $this->assertEqual($posts[0]->author->username, 'user1', "Post author");
-//
-//        $this->assertEqual($posts[2]->post_text, '@shutterbug This is a link post reply http://example.com/', "post reply");
-//        $this->assertEqual($posts[2]->post_id, 133, "post ID");
-//        $this->assertEqual($posts[2]->author->username, 'linkbaiter', "Post author");
-//        $this->assertEqual($posts[2]->link->expanded_url, 'http://example.com/expanded-link.html', "Expanded URL");
-//    }
-//
-//    /**
-//     * Test getPublicRepliesToPost
-//     */
-//    function testGetPublicRepliesToPost() {
-//        $dao = new PostMySQLDAO();
-//        $posts = $dao->getPublicRepliesToPost(41);
-//        $this->assertEqual(sizeof($posts), 2);
-//        $this->assertEqual($posts[0]->post_text, '@shutterbug Nice shot!', "post reply");
-//        $this->assertEqual($posts[0]->author->username, 'user1', "Post author");
-//
-//        $this->assertEqual($posts[1]->post_text, '@shutterbug This is a link post reply http://example.com/', "post reply");
-//        $this->assertEqual($posts[1]->post_id, 133, "post ID");
-//        $this->assertEqual($posts[1]->author->username, 'linkbaiter', "Post author");
-//        $this->assertEqual($posts[1]->link->expanded_url, 'http://example.com/expanded-link.html', "Expanded URL");
-//    }
-//
-//    /**
-//     * Test getRetweetsOfPost
-//     */
-//    function testGetRetweetsOfPost() {
-//        $dao = new PostMySQLDAO();
-//        $posts = $dao->getRetweetsOfPost(134);
-//        $this->assertEqual(sizeof($posts), 3);
-//        $this->assertEqual($posts[0]->post_text, 'RT @quoter Be liberal in what you accept and conservative in what you send', "post reply");
-//        $this->assertEqual($posts[0]->author->username, 'user1', "Post author");
-//    }
-//
-//    /**
-//     * Test getPostReachViaRetweets
-//     */
-//    function testGetPostReachViaRetweets() {
-//        $dao = new PostMySQLDAO();
-//        $total = $dao->getPostReachViaRetweets(134);
-//        $this->assertEqual($total, (90+80+70));
-//
-//        $total = $dao->getPostReachViaRetweets(130);
-//        $this->assertEqual($total, 0);
-//    }
-//
-//    /**
-//     * Test function getPostsAuthorHasRepliedTo
-//     */
-//    function testGetPostsAuthorHasRepliedTo(){
-//        $dao = new PostMySQLDAO();
-//        $posts_replied_to = $dao->getPostsAuthorHasRepliedTo(18, 10);
-//        $this->assertEqual($posts_replied_to[0]["questioner_username"], "user2");
-//        $this->assertEqual($posts_replied_to[0]["question"], "@shutterbug Nice shot!");
-//        $this->assertEqual($posts_replied_to[0]["answerer_username"], "shutterbug");
-//        $this->assertEqual($posts_replied_to[0]["answer"], "@user2 Thanks!");
-//
-//        $posts_replied_to = $dao->getPostsAuthorHasRepliedTo(13, 10);
-//        $this->assertEqual($posts_replied_to[0]["questioner_username"], "user1");
-//        $this->assertEqual($posts_replied_to[0]["question"], "@ev When will Twitter have a business model?");
-//        $this->assertEqual($posts_replied_to[0]["answerer_username"], "ev");
-//        $this->assertEqual($posts_replied_to[0]["answer"], "@user1 Soon....");
-//    }
-//
-//    /**
-//     * Test getExchangesBetweenUsers
-//     */
-//    function testGetExchangesBetweenUsers() {
-//        $dao = new PostMySQLDAO();
-//        $posts_replied_to = $dao->getExchangesBetweenUsers(18, 21);
-//        $this->assertEqual(sizeof($posts_replied_to), 2);
-//        $this->assertEqual($posts_replied_to[0]["questioner_username"], "shutterbug");
-//        $this->assertEqual($posts_replied_to[0]["question"], "This is image post 1");
-//        $this->assertEqual($posts_replied_to[0]["answerer_username"], "user2");
-//        $this->assertEqual($posts_replied_to[0]["answer"], "@shutterbug Nice shot!");
-//
-//        $this->assertEqual($posts_replied_to[1]["questioner_username"], "user2");
-//        $this->assertEqual($posts_replied_to[1]["question"], "@shutterbug Nice shot!");
-//        $this->assertEqual($posts_replied_to[1]["answerer_username"], "shutterbug");
-//        $this->assertEqual($posts_replied_to[1]["answer"], "@user2 Thanks!");
-//        
-//        $posts_replied_to = $dao->getPostsAuthorHasRepliedTo(13, 20);
-//        $this->assertEqual(sizeof($posts_replied_to), 1);
-//        $this->assertEqual($posts_replied_to[0]["questioner_username"], "user1");
-//        $this->assertEqual($posts_replied_to[0]["question"], "@ev When will Twitter have a business model?");
-//        $this->assertEqual($posts_replied_to[0]["answerer_username"], "ev");
-//        $this->assertEqual($posts_replied_to[0]["answer"], "@user1 Soon....");
-//    }
-//    
-//    /**
-//     * Test isPostInDB
-//     */
-//    function testIsPostInDB() {
-//        $dao = new PostMySQLDAO();
-//        $this->assertTrue($dao->isPostInDB(129));
-//        
-//        $this->assertTrue(!$dao->isPostInDB(250));
-//    }
-//
-//    /**
-//     * Test isReplyInDB
-//     */
-//    function testIsReplyInDB() {
-//        $dao = new PostMySQLDAO();
-//        $this->assertTrue($dao->isReplyInDB(138));
-//        
-//        $this->assertTrue(!$dao->isReplyInDB(250));
-//    }
+    /**
+     * Test constructor
+     */
+    function testConstructor() {
+        $dao = new PostMySQLDAO();
+        $this->assertTrue(isset($dao));
+    }
+
+    /**
+     * Test getStatusSources
+     */
+    function testGetStatusSources() {
+        $dao = new PostMySQLDAO();
+        $sources = $dao->getStatusSources(18);
+        $this->assertEqual(sizeof($sources), 2);
+        $this->assertEqual($sources[0]["source"], "Flickr");
+        $this->assertEqual($sources[0]["total"], 40);
+        $this->assertEqual($sources[1]["source"], "web");
+        $this->assertEqual($sources[1]["total"], 1);
+
+        //non-existent author
+        $sources = $dao->getStatusSources(51);
+        $this->assertEqual(sizeof($sources), 0);
+    }
+
+    /**
+     * Test getAllPostsByUsername
+     */
+    function testGetAllPostsByUsername() {
+        $dao = new PostMySQLDAO();
+        $total = $dao->getTotalPostsByUser(18);
+        $this->assertEqual($total, 41);
+
+        //non-existent author
+        $total = $dao->getTotalPostsByUser(51);
+        $this->assertEqual($total, 0);
+    }
+
+    /**
+     * Test getAllPosts
+     */
+    function testGetAllPostsByUsername() {
+        $dao = new PostMySQLDAO();
+        $posts = $dao->getAllPostsByUsername('shutterbug');
+        $this->assertEqual(sizeof($posts), 41);
+
+        //non-existent author
+        $posts = $dao->getAllPostsByUsername('idontexist');
+        $this->assertEqual(sizeof($posts), 0);
+    }
+
+    /**
+     * Test getAllPosts
+     */
+    function testGetAllPosts() {
+        $dao = new PostMySQLDAO();
+        //more than count
+        $posts = $dao->getAllPosts(18, 10);
+        $this->assertEqual(sizeof($posts), 10);
+
+        //less than count
+        $posts = $dao->getAllPosts(18, 50);
+        $this->assertEqual(sizeof($posts), 41);
+
+        //non-existent author
+        $posts = $dao->getAllPosts(30, 10);
+        $this->assertEqual(sizeof($posts), 0);
+    }
+
+    /**
+     * Test getPost on a post that exists
+     */
+    function testGetPostExists() {
+        $dao = new PostMySQLDAO();
+        $post = $dao->getPost(10);
+        $this->assertTrue(isset($post));
+        $this->assertEqual($post->post_text, 'This is post 10');
+        //link gets set
+        $this->assertTrue(isset($post->link));
+        //no link, so link member variables do not get set
+        $this->assertTrue(!isset($post->link->id));
+    }
+
+    /**
+     * Test getPost on a post that does not exist
+     */
+    function testGetPostDoesNotExist(){
+        $dao = new PostMySQLDAO();
+        $post = $dao->getPost(100000001);
+        $this->assertTrue(!isset($post));
+    }
+
+    /**
+     * Test getStandaloneReplies
+     */
+    function testGetStandaloneReplies() {
+        $dao = new PostMySQLDAO();
+        $posts = $dao->getStandaloneReplies('jack', 15);
+        $this->assertEqual(sizeof($posts), 10);
+        $this->assertEqual($posts[0]->post_text, 'Hey @ev and @jack should fix Twitter - post 9', "Standalone mention");
+        $this->assertEqual($posts[0]->author->username, 'user2', "Post author");
+
+        $posts = $dao->getStandaloneReplies('ev', 15);
+        $this->assertEqual(sizeof($posts), 11);
+        $this->assertEqual($posts[0]->post_text, 'Hey @ev and @jack should fix Twitter - post 9', "Standalone mention");
+        $this->assertEqual($posts[0]->author->username, 'user2', "Post author");
+    }
+
+    /**
+     * Test getRepliesToPost
+     */
+    function testGetRepliesToPost() {
+        $dao = new PostMySQLDAO();
+        $posts = $dao->getRepliesToPost(41);
+        $this->assertEqual(sizeof($posts), 3);
+        $this->assertEqual($posts[0]->post_text, '@shutterbug Nice shot!', "post reply");
+        $this->assertEqual($posts[0]->author->username, 'user1', "Post author");
+
+        $this->assertEqual($posts[2]->post_text, '@shutterbug This is a link post reply http://example.com/', "post reply");
+        $this->assertEqual($posts[2]->post_id, 133, "post ID");
+        $this->assertEqual($posts[2]->author->username, 'linkbaiter', "Post author");
+        $this->assertEqual($posts[2]->link->expanded_url, 'http://example.com/expanded-link.html', "Expanded URL");
+    }
+
+    /**
+     * Test getPublicRepliesToPost
+     */
+    function testGetPublicRepliesToPost() {
+        $dao = new PostMySQLDAO();
+        $posts = $dao->getPublicRepliesToPost(41);
+        $this->assertEqual(sizeof($posts), 2);
+        $this->assertEqual($posts[0]->post_text, '@shutterbug Nice shot!', "post reply");
+        $this->assertEqual($posts[0]->author->username, 'user1', "Post author");
+
+        $this->assertEqual($posts[1]->post_text, '@shutterbug This is a link post reply http://example.com/', "post reply");
+        $this->assertEqual($posts[1]->post_id, 133, "post ID");
+        $this->assertEqual($posts[1]->author->username, 'linkbaiter', "Post author");
+        $this->assertEqual($posts[1]->link->expanded_url, 'http://example.com/expanded-link.html', "Expanded URL");
+    }
+
+    /**
+     * Test getRetweetsOfPost
+     */
+    function testGetRetweetsOfPost() {
+        $dao = new PostMySQLDAO();
+        $posts = $dao->getRetweetsOfPost(134);
+        $this->assertEqual(sizeof($posts), 3);
+        $this->assertEqual($posts[0]->post_text, 'RT @quoter Be liberal in what you accept and conservative in what you send', "post reply");
+        $this->assertEqual($posts[0]->author->username, 'user1', "Post author");
+    }
+
+    /**
+     * Test getPostReachViaRetweets
+     */
+    function testGetPostReachViaRetweets() {
+        $dao = new PostMySQLDAO();
+        $total = $dao->getPostReachViaRetweets(134);
+        $this->assertEqual($total, (90+80+70));
+
+        $total = $dao->getPostReachViaRetweets(130);
+        $this->assertEqual($total, 0);
+    }
+
+    /**
+     * Test function getPostsAuthorHasRepliedTo
+     */
+    function testGetPostsAuthorHasRepliedTo(){
+        $dao = new PostMySQLDAO();
+        $posts_replied_to = $dao->getPostsAuthorHasRepliedTo(18, 10);
+        $this->assertEqual($posts_replied_to[0]["questioner_username"], "user2");
+        $this->assertEqual($posts_replied_to[0]["question"], "@shutterbug Nice shot!");
+        $this->assertEqual($posts_replied_to[0]["answerer_username"], "shutterbug");
+        $this->assertEqual($posts_replied_to[0]["answer"], "@user2 Thanks!");
+
+        $posts_replied_to = $dao->getPostsAuthorHasRepliedTo(13, 10);
+        $this->assertEqual($posts_replied_to[0]["questioner_username"], "user1");
+        $this->assertEqual($posts_replied_to[0]["question"], "@ev When will Twitter have a business model?");
+        $this->assertEqual($posts_replied_to[0]["answerer_username"], "ev");
+        $this->assertEqual($posts_replied_to[0]["answer"], "@user1 Soon....");
+    }
+
+    /**
+     * Test getExchangesBetweenUsers
+     */
+    function testGetExchangesBetweenUsers() {
+        $dao = new PostMySQLDAO();
+        $posts_replied_to = $dao->getExchangesBetweenUsers(18, 21);
+        $this->assertEqual(sizeof($posts_replied_to), 2);
+        $this->assertEqual($posts_replied_to[0]["questioner_username"], "shutterbug");
+        $this->assertEqual($posts_replied_to[0]["question"], "This is image post 1");
+        $this->assertEqual($posts_replied_to[0]["answerer_username"], "user2");
+        $this->assertEqual($posts_replied_to[0]["answer"], "@shutterbug Nice shot!");
+
+        $this->assertEqual($posts_replied_to[1]["questioner_username"], "user2");
+        $this->assertEqual($posts_replied_to[1]["question"], "@shutterbug Nice shot!");
+        $this->assertEqual($posts_replied_to[1]["answerer_username"], "shutterbug");
+        $this->assertEqual($posts_replied_to[1]["answer"], "@user2 Thanks!");
+
+        $posts_replied_to = $dao->getPostsAuthorHasRepliedTo(13, 20);
+        $this->assertEqual(sizeof($posts_replied_to), 1);
+        $this->assertEqual($posts_replied_to[0]["questioner_username"], "user1");
+        $this->assertEqual($posts_replied_to[0]["question"], "@ev When will Twitter have a business model?");
+        $this->assertEqual($posts_replied_to[0]["answerer_username"], "ev");
+        $this->assertEqual($posts_replied_to[0]["answer"], "@user1 Soon....");
+    }
+
+    /**
+     * Test isPostInDB
+     */
+    function testIsPostInDB() {
+        $dao = new PostMySQLDAO();
+        $this->assertTrue($dao->isPostInDB(129));
+
+        $this->assertTrue(!$dao->isPostInDB(250));
+    }
+
+    /**
+     * Test isReplyInDB
+     */
+    function testIsReplyInDB() {
+        $dao = new PostMySQLDAO();
+        $this->assertTrue($dao->isReplyInDB(138));
+
+        $this->assertTrue(!$dao->isReplyInDB(250));
+    }
 
     /**
      * Test addPost
@@ -345,7 +405,7 @@ class TestOfPostMySQLDAO extends ThinkTankUnitTestCase {
         $vals['source']='web';
         $vals['network']= 'twitter';
         $vals['in_reply_to_post_id']= '';
-        
+
         //test add straight post that doesn't exist
         $this->assertEqual($dao->addPost($vals), 1, "Post inserted");
         $post = $dao->getPost(250);
@@ -359,11 +419,11 @@ class TestOfPostMySQLDAO extends ThinkTankUnitTestCase {
         $this->assertEqual($post->network, 'twitter');
         $this->assertEqual($post->mention_count_cache, 0);
         $this->assertEqual($post->retweet_count_cache, 0);
-        
+
         //test add post that does exist
         $vals['post_id']=129;
         $this->assertEqual($dao->addPost($vals), 0, "Post exists, nothing inserted");
-        
+
         //test add reply, check cache count
         $vals['post_id']=251;
         $vals['in_reply_to_post_id']= 129;
@@ -379,7 +439,7 @@ class TestOfPostMySQLDAO extends ThinkTankUnitTestCase {
         $post = $dao->getPost(128);
         $this->assertEqual($post->retweet_count_cache, 1, "retweet count got updated");
     }
-    
+
     //    function testGetPageOneOfPublicPosts() {
     //        //Instantiate DAO
     //        $pdao = new PostDAO($this->db, $this->logger);
