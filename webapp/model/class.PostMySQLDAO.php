@@ -63,10 +63,6 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
         return $p;
     }
 
-
-    /**
-     * @TODO Figure out why PDO's param binding doesn't work here
-     */
     function getStandaloneReplies($username, $limit) {
         $q = " SELECT p.*, u.*, pub_date - INTERVAL #gmt_offset# hour AS adj_pub_date ";
         $q .= " FROM #prefix#posts AS p ";
@@ -74,27 +70,29 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
         $username = '@'.$username;
 
         if ( strlen($username) > 4) { //FULLTEXT search only works for words longer than 4 chars
-            $q .= " MATCH (`post_text`) AGAINST('\"".$username."\"' IN BOOLEAN MODE) ";
+            $q .= " MATCH (`post_text`) AGAINST(:username IN BOOLEAN MODE) ";
         } else {
-            $q .= " post_text LIKE '%".$username."%' ";
+            $username = '%'.$username .'%';
+            $q .= " post_text LIKE :username ";
         }
 
         $q .= " AND in_reply_to_post_id = 0 ";
         $q .= " ORDER BY adj_pub_date DESC ";
+        //$q .= " LIMIT :limit";
         $q .= " LIMIT ".$limit;
         $vars = array(
-        // @TODO Figure out why PDO's param binding doesn't work here
-        //':username'=>$username,
-        //':limit'=>$limit
+            ':username'=>$username
+//            ,
+//            ':limit'=>$limit
         );
 
         $ps = $this->execute($q, $vars);
         $all_rows = $this->getDataRowsAsArrays($ps);
-        $strays = array();
+        $replies = array();
         foreach ($all_rows as $row) {
-            $strays[] = $this->setPostWithAuthor($row);
+            $replies[] = $this->setPostWithAuthor($row);
         }
-        return $strays;
+        return $replies;
     }
 
     //    function getRepliesToPost($post_id, $public = false, $count = 350) {
