@@ -57,19 +57,19 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
      * @param arrays $row
      */
     private function setPostWithLink($row) {
-        $p = new Post($row);
-        $l = new Link($row);
-        $p->link = $l;
-        return $p;
+        $post = new Post($row);
+        $link = new Link($row);
+        $post->link = $link;
+        return $post;
     }
 
     function getStandaloneReplies($username, $limit) {
+        $username = '@'.$username;
         $q = " SELECT p.*, u.*, pub_date - INTERVAL #gmt_offset# hour AS adj_pub_date ";
         $q .= " FROM #prefix#posts AS p ";
         $q .= " INNER JOIN #prefix#users AS u ON p.author_user_id = u.user_id WHERE ";
-        $username = '@'.$username;
 
-        if ( strlen($username) > 4) { //FULLTEXT search only works for words longer than 4 chars
+        if ( strlen($username) > 4 ) { //fulltext search only works for words longer than 4 chars
             $q .= " MATCH (`post_text`) AGAINST(:username IN BOOLEAN MODE) ";
         } else {
             $username = '%'.$username .'%';
@@ -78,12 +78,10 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
 
         $q .= " AND in_reply_to_post_id = 0 ";
         $q .= " ORDER BY adj_pub_date DESC ";
-        //$q .= " LIMIT :limit";
-        $q .= " LIMIT ".$limit;
+        $q .= " LIMIT :limit";
         $vars = array(
-            ':username'=>$username
-//            ,
-//            ':limit'=>$limit
+            ':username'=>$username,
+            ':limit'=>$limit
         );
 
         $ps = $this->execute($q, $vars);
@@ -95,56 +93,57 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
         return $replies;
     }
 
-    //    function getRepliesToPost($post_id, $public = false, $count = 350) {
-    //        $condition = "";
-    //        if ($public)
-    //        $condition = "AND u.is_protected = 0";
-    //        $q = " SELECT t.*, l.url, l.expanded_url, l.is_image, l.error, u.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
-    //        $q .= " FROM #prefix#posts t ";
-    //        $q .= " LEFT JOIN #prefix#links AS l ON l.post_id = t.post_id ";
-    //        $q .= " INNER JOIN #prefix#users AS u ON t.author_user_id = u.user_id ";
-    //        $q .= " WHERE in_reply_to_post_id=".$post_id." ".$condition;
-    //        $q .= " ORDER BY follower_count desc ";
-    //        $q .= " LIMIT $count; ";
-    //
-    //        $sql_result = $this->executeSQL($q);
-    //        $posts_stored = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $posts_stored[] = $this->setPostWithAuthorAndLink($row);
-    //        }
-    //        mysql_free_result($sql_result); # Free up memory
-    //        return $posts_stored;
-    //    }
-    //
-    //    function getRetweetsOfPost($post_id, $public = false) {
-    //        $condition = "";
-    //        if ($public)
-    //        $condition = "AND u.is_protected = 0";
-    //
-    //        $q = "
-    //            select
-    //                t.*, u.*,  l.url, l.expanded_url, l.is_image, l.error, pub_date - interval #gmt_offset# hour as adj_pub_date
-    //            from
-    //                #prefix#posts t
-    //            LEFT JOIN #prefix#links AS l ON l.post_id = t.post_id
-    //            inner join
-    //                #prefix#users u
-    //            on
-    //                t.author_user_id = u.user_id
-    //            where
-    //                in_retweet_of_post_id=".$post_id."
-    //                ".$condition."
-    //            order by
-    //                follower_count desc;";
-    //        $sql_result = $this->executeSQL($q);
-    //        $posts_stored = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $posts_stored[] = $this->setPostWithAuthorAndLink($row);
-    //        }
-    //        mysql_free_result($sql_result); # Free up memory
-    //        return $posts_stored;
-    //    }
-    //
+    function getRepliesToPost($post_id, $is_public = false, $count = 350) {
+        $q = " SELECT p.*, l.url, l.expanded_url, l.is_image, l.error, u.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
+        $q .= " FROM #prefix#posts p ";
+        $q .= " LEFT JOIN #prefix#links AS l ON l.post_id = p.post_id ";
+        $q .= " INNER JOIN #prefix#users AS u ON p.author_user_id = u.user_id ";
+        $q .= " WHERE in_reply_to_post_id=:post_id ";
+        if ($is_public) {
+            $q .= "AND u.is_protected = 0 ";
+        }
+        $q .= " ORDER BY follower_count desc ";
+        $q .= " LIMIT :limit;";
+
+        $vars = array(
+            ':post_id'=>$post_id,
+            ':limit'=>$count
+        );
+
+        $ps = $this->execute($q, $vars);
+        $all_rows = $this->getDataRowsAsArrays($ps);
+        $replies = array();
+        foreach ($all_rows as $row) {
+            $replies[] = $this->setPostWithAuthorAndLink($row);
+        }
+        return $replies;
+    }
+
+    function getRetweetsOfPost($post_id, $is_public = false) {
+        $q = "SELECT
+                    p.*, u.*,  l.url, l.expanded_url, l.is_image, l.error, pub_date - interval #gmt_offset# hour as adj_pub_date ";
+        $q .= " FROM #prefix#posts p ";
+        $q .= " LEFT JOIN #prefix#links AS l ON l.post_id = p.post_id ";
+        $q .= " INNER JOIN #prefix#users u on p.author_user_id = u.user_id ";
+        $q .= " WHERE  in_retweet_of_post_id=:post_id ";
+        if ($is_public) {
+            $q .= "AND u.is_protected = 0 ";
+        }
+        $q .= "  ORDER BY follower_count DESC;";
+
+        $vars = array(
+            ':post_id'=>$post_id
+        );
+
+        $ps = $this->execute($q, $vars);
+        $all_rows = $this->getDataRowsAsArrays($ps);
+        $retweets = array();
+        foreach ($all_rows as $row) {
+            $retweets[] = $this->setPostWithAuthorAndLink($row);
+        }
+        return $retweets;
+    }
+
     //    function getPostReachViaRetweets($post_id) {
     //        $q = "
     //            select

@@ -42,13 +42,16 @@ class TestOfPostMySQLDAO extends ThinkTankUnitTestCase {
         $q = "INSERT INTO tt_users (user_id, user_name, full_name, avatar, is_protected, follower_count) VALUES (18, 'shutterbug', 'Shutter Bug', 'avatar.jpg', 0, 10);";
         PDODAO::$PDO->exec($q);
 
-        $q = "INSERT INTO tt_users (user_id, user_name, full_name, avatar, is_protected, follower_count) VALUES (19, 'linkbaiter', 'Link Baiter', 'avatar.jpg', 0, 10);";
+        $q = "INSERT INTO tt_users (user_id, user_name, full_name, avatar, is_protected, follower_count) VALUES (19, 'linkbaiter', 'Link Baiter', 'avatar.jpg', 0, 70);";
         PDODAO::$PDO->exec($q);
 
-        $q = "INSERT INTO tt_users (user_id, user_name, full_name, avatar, is_protected, follower_count) VALUES (20, 'user1', 'User 1', 'avatar.jpg', 0, 10);";
+        $q = "INSERT INTO tt_users (user_id, user_name, full_name, avatar, is_protected, follower_count) VALUES (20, 'user1', 'User 1', 'avatar.jpg', 0, 90);";
         PDODAO::$PDO->exec($q);
 
-        $q = "INSERT INTO tt_users (user_id, user_name, full_name, avatar, is_protected, follower_count) VALUES (21, 'user2', 'User 2', 'avatar.jpg', 0, 10);";
+        $q = "INSERT INTO tt_users (user_id, user_name, full_name, avatar, is_protected, follower_count) VALUES (21, 'user2', 'User 2', 'avatar.jpg', 0, 80);";
+        PDODAO::$PDO->exec($q);
+
+        $q = "INSERT INTO tt_users (user_id, user_name, full_name, avatar, is_protected, follower_count) VALUES (22, 'quoter', 'Quotables', 'avatar.jpg', 0, 80);";
         PDODAO::$PDO->exec($q);
 
         //Make public
@@ -98,7 +101,7 @@ class TestOfPostMySQLDAO extends ThinkTankUnitTestCase {
             $counter++;
         }
 
-        //Add replies
+        //Add mentions
         $counter = 0;
         while ($counter < 10) {
             $post_id = $counter + 120;
@@ -112,52 +115,115 @@ class TestOfPostMySQLDAO extends ThinkTankUnitTestCase {
 
             $counter++;
         }
+
+
+        //Add replies to specific post
+        $q = "INSERT INTO tt_posts (post_id, author_user_id, author_username, author_fullname, author_avatar, post_text, source, pub_date, mention_count_cache, retweet_count_cache, in_reply_to_post_id) VALUES (131, 20, 'user1', 'User 1', 'avatar.jpg', '@shutterbug Nice shot!', 'web', '2006-03-01 00:00:00', 0, 0, 41);";
+        PDODAO::$PDO->exec($q);
+
+        $q = "INSERT INTO tt_posts (post_id, author_user_id, author_username, author_fullname, author_avatar, post_text, source, pub_date, mention_count_cache, retweet_count_cache, in_reply_to_post_id) VALUES (132, 21, 'user2', 'User 2', 'avatar.jpg', '@shutterbug Nice shot!', 'web', '2006-03-01 00:00:00', 0, 0, 41);";
+        PDODAO::$PDO->exec($q);
+
+        $q = "INSERT INTO tt_posts (post_id, author_user_id, author_username, author_fullname, author_avatar, post_text, source, pub_date, mention_count_cache, retweet_count_cache, in_reply_to_post_id) VALUES (133, 19, 'linkbaiter', 'Link Baiter', 'avatar.jpg', '@shutterbug This is a link post reply http://example.com/', 'web', '2006-03-01 00:00:00', 0, 0, 41);";
+        PDODAO::$PDO->exec($q);
+
+        $q = "INSERT INTO tt_links (url, expanded_url, title, clicks, post_id, is_image) VALUES ('http://example.com/', 'http://example.com/expanded-link.html', 'Link 1', 0, 133, 0);";
+        PDODAO::$PDO->exec($q);
+
+
+        //Add retweets of a specific post
+        //original post
+        $q = "INSERT INTO tt_posts (post_id, author_user_id, author_username, author_fullname, author_avatar, post_text, source, pub_date, mention_count_cache, retweet_count_cache, in_reply_to_post_id) VALUES (134, 22, 'quoter', 'Quotable', 'avatar.jpg', 'Be liberal in what you accept and conservative in what you send', 'web', '2006-03-01 00:00:00', 0, 0, 0);";
+        PDODAO::$PDO->exec($q);
+        //retweet 1
+        $q = "INSERT INTO tt_posts (post_id, author_user_id, author_username, author_fullname, author_avatar, post_text, source, pub_date, mention_count_cache, retweet_count_cache, in_retweet_of_post_id) VALUES (135, 20, 'user1', 'User 1', 'avatar.jpg', 'RT @quoter Be liberal in what you accept and conservative in what you send', 'web', '2006-03-01 00:00:00', 0, 0, 134);";
+        PDODAO::$PDO->exec($q);
+        //retweet 2
+        $q = "INSERT INTO tt_posts (post_id, author_user_id, author_username, author_fullname, author_avatar, post_text, source, pub_date, mention_count_cache, retweet_count_cache, in_retweet_of_post_id) VALUES (136, 21, 'user2', 'User 2', 'avatar.jpg', 'RT @quoter Be liberal in what you accept and conservative in what you send', 'web', '2006-03-01 00:00:00', 0, 0, 134);";
+        PDODAO::$PDO->exec($q);
+        //retweet 3
+        $q = "INSERT INTO tt_posts (post_id, author_user_id, author_username, author_fullname, author_avatar, post_text, source, pub_date, mention_count_cache, retweet_count_cache, in_retweet_of_post_id) VALUES (137, 19, 'linkbaiter', 'Link Baiter', 'avatar.jpg', 'RT @quoter Be liberal in what you accept and conservative in what you send', 'web', '2006-03-01 00:00:00', 0, 0, 134);";
+        PDODAO::$PDO->exec($q);
+
     }
 
     function tearDown() {
         parent::tearDown();
     }
 
-//    /**
-//     * Test constructor
-//     */
-//    function testConstructor() {
-//        $dao = new PostMySQLDAO();
-//        $this->assertTrue(isset($dao));
-//    }
-//
-//
-//    /**
-//     * Test getPost on a post that exists
-//     */
-//    function testGetPostExists() {
-//        $dao = new PostMySQLDAO();
-//        $post = $dao->getPost(10);
-//        $this->assertTrue(isset($post));
-//        $this->assertEqual($post->post_text, 'This is post 10');
-//        //link gets set
-//        $this->assertTrue(isset($post->link));
-//        //no link, so link member variables do not get set
-//        $this->assertTrue(!isset($post->link->id));
-//    }
-//
-//    /**
-//     * Test getPost on a post that does not exist
-//     */
-//    function testGetPostDoesNotExist(){
-//        $dao = new PostMySQLDAO();
-//        $post = $dao->getPost(100000001);
-//        $this->assertTrue(!isset($post));
-//    }
+    /**
+     * Test constructor
+     */
+    function testConstructor() {
+        $dao = new PostMySQLDAO();
+        $this->assertTrue(isset($dao));
+    }
 
+
+    /**
+     * Test getPost on a post that exists
+     */
+    function testGetPostExists() {
+        $dao = new PostMySQLDAO();
+        $post = $dao->getPost(10);
+        $this->assertTrue(isset($post));
+        $this->assertEqual($post->post_text, 'This is post 10');
+        //link gets set
+        $this->assertTrue(isset($post->link));
+        //no link, so link member variables do not get set
+        $this->assertTrue(!isset($post->link->id));
+    }
+
+    /**
+     * Test getPost on a post that does not exist
+     */
+    function testGetPostDoesNotExist(){
+        $dao = new PostMySQLDAO();
+        $post = $dao->getPost(100000001);
+        $this->assertTrue(!isset($post));
+    }
+
+    /**
+     * Test getStandaloneReplies
+     */
     function testGetStandaloneReplies() {
         $dao = new PostMySQLDAO();
         $posts = $dao->getStandaloneReplies('jack', 15);
         $this->assertEqual(sizeof($posts), 10);
-        
+        $this->assertEqual($posts[0]->post_text, 'Hey @ev and @jack should fix Twitter - post 9', "Standalone mention");
+        $this->assertEqual($posts[0]->author->username, 'user2', "Post author");
+
         $posts = $dao->getStandaloneReplies('ev', 15);
         $this->assertEqual(sizeof($posts), 10);
-        
+        $this->assertEqual($posts[0]->post_text, 'Hey @ev and @jack should fix Twitter - post 9', "Standalone mention");
+        $this->assertEqual($posts[0]->author->username, 'user2', "Post author");
+    }
+
+    /**
+     * Test getRepliesToPost
+     */
+    function testGetRepliesToPost() {
+        $dao = new PostMySQLDAO();
+        $posts = $dao->getRepliesToPost(41);
+        $this->assertEqual(sizeof($posts), 3);
+        $this->assertEqual($posts[0]->post_text, '@shutterbug Nice shot!', "post reply");
+        $this->assertEqual($posts[0]->author->username, 'user1', "Post author");
+
+        $this->assertEqual($posts[2]->post_text, '@shutterbug This is a link post reply http://example.com/', "post reply");
+        $this->assertEqual($posts[2]->post_id, 133, "post ID");
+        $this->assertEqual($posts[2]->author->username, 'linkbaiter', "Post author");
+        $this->assertEqual($posts[2]->link->expanded_url, 'http://example.com/expanded-link.html', "Expanded URL");
+    }
+
+    /**
+     * Test getRetweetsOfPost
+     */
+    function testGetRetweetsOfPost() {
+        $dao = new PostMySQLDAO();
+        $posts = $dao->getRetweetsOfPost(134);
+        $this->assertEqual(sizeof($posts), 3);
+        $this->assertEqual($posts[0]->post_text, 'RT @quoter Be liberal in what you accept and conservative in what you send', "post reply");
+        $this->assertEqual($posts[0]->author->username, 'user1', "Post author");
     }
 
     //    function testGetPageOneOfPublicPosts() {
