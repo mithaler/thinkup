@@ -30,6 +30,7 @@ class Post {
         $this->post_id = $val["post_id"];
         $this->author_user_id = $val["author_user_id"];
         $this->author_username = $val["author_username"];
+        $this->author_fullname = $val["author_fullname"];
         $this->author_avatar = $val["author_avatar"];
         $this->post_text = $val["post_text"];
         $this->source = $val["source"];

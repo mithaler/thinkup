@@ -144,212 +144,187 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
         return $retweets;
     }
 
-    //    function getPostReachViaRetweets($post_id) {
-    //        $q = "
-    //            select
-    //                SUM(u.follower_count) as total
-    //            from
-    //                #prefix#posts t
-    //            inner join
-    //                #prefix#users u
-    //            on
-    //                t.author_user_id = u.user_id
-    //            where
-    //                in_retweet_of_post_id=".$post_id."
-    //            order by
-    //                follower_count desc;";
-    //        $sql_result = $this->executeSQL($q);
-    //        $row = mysql_fetch_assoc($sql_result);
-    //        mysql_free_result($sql_result); # Free up memory
-    //        return $row['total'];
-    //    }
-    //
-    //    function getPostsAuthorHasRepliedTo($author_id, $count) {
-    //        //TODO: Figure out a better way to do this, only returns 1-1 exchanges, not back-and-forth threads
-    //
-    //        $q = "
-    //            SELECT
-    //                t1.author_username as questioner_username, t1.author_avatar as questioner_avatar, t2.follower_count as answerer_follower_count, t1.post_id as question_post_id, t1.post_text as question, t1.pub_date - interval #gmt_offset# hour as question_adj_pub_date, t.post_id as answer_post_id, t.author_username as answerer_username, t.author_avatar as answerer_avatar, t3.follower_count as questioner_follower_count, t.post_text as answer, t.pub_date - interval #gmt_offset# hour as answer_adj_pub_date
-    //            FROM
-    //                #prefix#posts t
-    //            INNER JOIN
-    //                #prefix#posts t1 on t1.post_id = t.in_reply_to_post_id
-    //            JOIN
-    //                #prefix#users t2 on t2.user_id = ".$author_id."
-    //            JOIN
-    //                #prefix#users t3 on t3.user_id = t.in_reply_to_user_id
-    //            WHERE
-    //                t.author_user_id = ".$author_id." AND t.in_reply_to_post_id is not null
-    //            ORDER BY
-    //                t.pub_date desc
-    //            LIMIT ".$count.";";
-    //
-    //        $sql_result = $this->executeSQL($q);
-    //        $posts_replied_to = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $posts_replied_to[] = $row;
-    //        }
-    //        mysql_free_result($sql_result); # Free up memory
-    //        return $posts_replied_to;
-    //
-    //    }
-    //
-    //    function getExchangesBetweenUsers($author_id, $other_user_id) {
-    //
-    //        $q = "
-    //
-    //            SELECT
-    //                t1.author_username as questioner_username, t1.author_avatar as questioner_avatar, t2.follower_count as questioner_follower_count, t1.post_id as question_post_id, t1.post_text as question, t1.pub_date - interval #gmt_offset# hour as question_adj_pub_date, t.post_id as answer_post_id,  t.author_username as answerer_username, t.author_avatar as answerer_avatar, t3.follower_count as answerer_follower_count, t.post_text as answer, t.pub_date - interval #gmt_offset# hour as answer_adj_pub_date
-    //            FROM
-    //                #prefix#posts t
-    //            INNER JOIN
-    //                #prefix#posts t1 on t1.post_id = t.in_reply_to_post_id
-    //            JOIN
-    //                #prefix#users t2 on t2.user_id = ".$author_id."
-    //            JOIN
-    //                #prefix#users t3 on t3.user_id = ".$other_user_id."
-    //            WHERE
-    //                t.in_reply_to_post_id is not null AND
-    //                (t.author_user_id = ".$author_id." AND t1.author_user_id = ".$other_user_id.")
-    //                OR
-    //                (t1.author_user_id = ".$author_id." AND t.author_user_id = ".$other_user_id.")
-    //            ORDER BY
-    //                t.pub_date desc";
-    //
-    //        $sql_result = $this->executeSQL($q);
-    //        $posts_replied_to = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $posts_replied_to[] = $row;
-    //        }
-    //        mysql_free_result($sql_result); # Free up memory
-    //        return $posts_replied_to;
-    //
-    //    }
-    //
-    //
-    //    function getPublicRepliesToPost($post_id) {
-    //        return $this->getRepliesToPost($post_id, true);
-    //    }
-    //
-    //    function addPost($vals) {
-    //        if (!$this->isPostInDB($vals['post_id'])) {
-    //
-    //            foreach ($vals as $key=>$value) {
-    //                $vals[$key] = mysql_real_escape_string($value);
-    //            }
-    //            $post_sql = $vals['post_text'];
-    //            if (!isset($vals['in_reply_to_user_id']) || $vals['in_reply_to_user_id'] == '') {
-    //                $post_in_reply_to_user_id = 'NULL';
-    //            } else {
-    //                $post_in_reply_to_user_id = $vals['in_reply_to_user_id'];
-    //            }
-    //
-    //            if (!isset($vals['in_reply_to_post_id']) || $vals['in_reply_to_post_id'] == '') {
-    //                $post_in_reply_to_post_id = 'NULL';
-    //            } else {
-    //                $post_in_reply_to_post_id = $vals['in_reply_to_post_id'];
-    //            }
-    //            if (isset($vals['in_retweet_of_post_id'])) {
-    //                if ($vals['in_retweet_of_post_id'] == '') {
-    //                    $post_in_retweet_of_post_id = 'NULL';
-    //                } else {
-    //                    $post_in_retweet_of_post_id = $vals['in_retweet_of_post_id'];
-    //                }
-    //            } else
-    //            $post_in_retweet_of_post_id = 'NULL';
-    //
-    //            if (!isset($vals["network"])) {
-    //                $vals["network"] = 'twitter';
-    //            }
-    //
-    //
-    //            $q = "
-    //                INSERT INTO #prefix#posts
-    //                    (post_id,
-    //                    author_username,author_fullname,author_avatar,author_user_id,
-    //                    post_text,pub_date,in_reply_to_user_id,in_reply_to_post_id,in_retweet_of_post_id,source,network)
-    //                VALUES (
-    //                {$vals['post_id']}, '{$vals['user_name']}',
-    //                    '{$vals['full_name']}', '{$vals['avatar']}', '{$vals['user_id']}',
-    //                    '$post_sql',
-    //                    '{$vals['pub_date']}', $post_in_reply_to_user_id, $post_in_reply_to_post_id,$post_in_retweet_of_post_id,'{$vals['source']}','{$vals['network']}')
-    //            ";
-    //                $foo = $this->executeSQL($q);
-    //
-    //                if ($vals['in_reply_to_post_id'] != '' && $this->isPostInDB($vals['in_reply_to_post_id'])) {
-    //                    $this->incrementReplyCountCache($vals['in_reply_to_post_id']);
-    //                    $status_message = "Reply found for ".$vals['in_reply_to_post_id'].", ID: ".$vals["post_id"]."; updating reply cache count";
-    //                    $this->logger->logStatus($status_message, get_class($this));
-    //                    $status_message = "";
-    //                }
-    //
-    //                if (isset($vals['in_retweet_of_post_id']) && $vals['in_retweet_of_post_id'] != '' && $this->isPostInDB($vals['in_retweet_of_post_id'])) {
-    //                    $this->incrementRepostCountCache($vals['in_retweet_of_post_id']);
-    //                    $status_message = "Repost of ".$vals['in_retweet_of_post_id']." by ".$vals["user_name"]." ID: ".$vals["post_id"]."; updating retweet cache count";
-    //                    $this->logger->logStatus($status_message, get_class($this));
-    //                    $status_message = "";
-    //                }
-    //
-    //
-    //                return mysql_affected_rows();
-    //        } else {
-    //            return 0;
-    //        }
-    //
-    //    }
-    //
-    //
-    //    function isPostInDB($post_id) {
-    //        $q = "
-    //            SELECT
-    //                post_id
-    //            FROM
-    //                #prefix#posts
-    //            WHERE post_id = ".$post_id;
-    //        $sql_result = $this->executeSQL($q);
-    //        if (mysql_num_rows($sql_result) > 0)
-    //        return true;
-    //        else
-    //        return false;
-    //    }
-    //
-    //    function isReplyInDB($post_id) {
-    //        $q = "
-    //            SELECT
-    //                post_id
-    //            FROM
-    //                #prefix#posts
-    //            WHERE
-    //                post_id = ".$post_id;
-    //        $sql_result = $this->executeSQL($q);
-    //        if (mysql_num_rows($sql_result) > 0)
-    //        return true;
-    //        else
-    //        return false;
-    //    }
-    //
-    //    function incrementReplyCountCache($post_id) {
-    //        return $this->incrementCacheCount($post_id, "mention");
-    //    }
-    //
-    //    function incrementRepostCountCache($post_id) {
-    //        return $this->incrementCacheCount($post_id, "retweet");
-    //    }
-    //
-    //    private function incrementCacheCount($post_id, $fieldname) {
-    //        $q = "
-    //            UPDATE
-    //                #prefix#posts
-    //            SET
-    //                ".$fieldname."_count_cache = ".$fieldname."_count_cache + 1
-    //            WHERE
-    //                post_id = ".$post_id."
-    //        ";
-    //        $foo = $this->executeSQL($q);
-    //        return mysql_affected_rows();
-    //    }
-    //
-    //
+    function getPostReachViaRetweets($post_id) {
+        $q = "SELECT  SUM(u.follower_count) AS total ";
+        $q .= "FROM  #prefix#posts p INNER JOIN #prefix#users u ";
+        $q .= "ON p.author_user_id = u.user_id WHERE in_retweet_of_post_id=:post_id ";
+        $q .= "ORDER BY follower_count desc;";
+        $vars = array(
+            ':post_id'=>$post_id
+        );
+        $ps = $this->execute($q, $vars);
+        $row = $this->getDataRowAsArray($ps);
+        return $row['total'];
+    }
+
+    /**
+     * @TODO: Figure out a better way to do this, only returns 1-1 exchanges, not back-and-forth threads
+     */
+    function getPostsAuthorHasRepliedTo($author_id, $count) {
+        $q = "SELECT p1.author_username as questioner_username, p1.author_avatar as questioner_avatar, p2.follower_count as answerer_follower_count, p1.post_id as question_post_id, p1.post_text as question, p1.pub_date - interval #gmt_offset# hour as question_adj_pub_date, p.post_id as answer_post_id, p.author_username as answerer_username, p.author_avatar as answerer_avatar, p3.follower_count as questioner_follower_count, p.post_text as answer, p.pub_date - interval #gmt_offset# hour as answer_adj_pub_date ";
+        $q .= " FROM #prefix#posts p INNER JOIN #prefix#posts p1 on p1.post_id = p.in_reply_to_post_id ";
+        $q .= " JOIN #prefix#users p2 on p2.user_id = :author_id ";
+        $q .= " JOIN #prefix#users p3 on p3.user_id = p.in_reply_to_user_id ";
+        $q .= " WHERE p.author_user_id = :author_id AND p.in_reply_to_post_id IS NOT NULL ";
+        $q .= " ORDER BY p.pub_date desc LIMIT :limit;";
+        $vars = array(
+            ':author_id'=>$author_id,
+            ':limit'=>$count
+        );
+        $ps = $this->execute($q, $vars);
+        $all_rows = $this->getDataRowsAsArrays($ps);
+        $posts_replied_to = array();
+        foreach ($all_rows as $row) {
+            $posts_replied_to[] = $row;
+        }
+        return $posts_replied_to;
+    }
+
+    public function getExchangesBetweenUsers($author_id, $other_user_id) {
+        $q = "SELECT   p1.author_username as questioner_username, p1.author_avatar as questioner_avatar, p2.follower_count as questioner_follower_count, p1.post_id as question_post_id, p1.post_text as question, p1.pub_date - interval #gmt_offset# hour as question_adj_pub_date, p.post_id as answer_post_id,  p.author_username as answerer_username, p.author_avatar as answerer_avatar, p3.follower_count as answerer_follower_count, p.post_text as answer, p.pub_date - interval #gmt_offset# hour as answer_adj_pub_date ";
+        $q .= " FROM  #prefix#posts p INNER JOIN #prefix#posts p1 on p1.post_id = p.in_reply_to_post_id ";
+        $q .= " JOIN #prefix#users p2 on p2.user_id = :author_id ";
+        $q .= " JOIN #prefix#users p3 on p3.user_id = :other_user_id ";
+        $q .= " WHERE p.in_reply_to_post_id is not null AND ";
+        $q .= " (p.author_user_id = :author_id AND p1.author_user_id = :other_user_id) ";
+        $q .= " OR (p1.author_user_id = :author_id AND p.author_user_id = :other_user_id) ";
+        $q .= " ORDER BY p.pub_date DESC ";
+        $vars = array(
+            ':author_id'=>$author_id,
+            ':other_user_id'=>$other_user_id
+        );
+        $ps = $this->execute($q, $vars);
+
+        $all_rows = $this->getDataRowsAsArrays($ps);
+        $posts_replied_to = array();
+        foreach ($all_rows as $row) {
+            $posts_replied_to[] = $row;
+        }
+        return $posts_replied_to;
+    }
+
+    public function getPublicRepliesToPost($post_id) {
+        return $this->getRepliesToPost($post_id, true);
+    }
+
+    public function isPostInDB($post_id) {
+        $q = "SELECT post_id FROM  #prefix#posts ";
+        $q .= " WHERE post_id = :post_id;";
+        $vars = array(
+            ':post_id'=>$post_id
+        );
+        $ps = $this->execute($q, $vars);
+        return $this->getDataIsReturned($ps);
+    }
+
+    public function isReplyInDB($post_id) {
+        return $this->isPostInDB($post_id);
+    }
+
+    /**
+     * Increment reply cache count
+     * @param int $post_id
+     * @return int number of updated rows (1 if successful, 0 if not)
+     */
+    private function incrementReplyCountCache($post_id) {
+        return $this->incrementCacheCount($post_id, "mention");
+    }
+
+    /**
+     * Increment retweet cache count
+     * @param int $post_id
+     * @return int number of updated rows (1 if successful, 0 if not)
+     */
+    private function incrementRepostCountCache($post_id) {
+        return $this->incrementCacheCount($post_id, "retweet");
+    }
+
+    /**
+     * Increment either mention_cache_count or retweet_cache_count
+     * @param int $post_id
+     * @param string $fieldname either "mention" or "retweet"
+     * @return int number of updated rows
+     */
+    private function incrementCacheCount($post_id, $fieldname) {
+        $fieldname = $fieldname=="mention"?"mention":"retweet";
+        $q = " UPDATE  #prefix#posts SET ".$fieldname."_count_cache = ".$fieldname."_count_cache + 1 ";
+        $q .= "WHERE post_id = :post_id";
+        $vars = array(
+            ':post_id'=>$post_id
+        );
+        $ps = $this->execute($q, $vars);
+        return $this->getUpdateCount($ps);
+    }
+
+    public function addPost($vals) {
+        if (!$this->isPostInDB($vals['post_id'])) {
+            if (!isset($vals['in_reply_to_user_id']) || $vals['in_reply_to_user_id'] == '') {
+                $post_in_reply_to_user_id = 'NULL';
+            } else {
+                $post_in_reply_to_user_id = $vals['in_reply_to_user_id'];
+            }
+            if (!isset($vals['in_reply_to_post_id']) || $vals['in_reply_to_post_id'] == '') {
+                $post_in_reply_to_post_id = 'NULL';
+            } else {
+                $post_in_reply_to_post_id = $vals['in_reply_to_post_id'];
+            }
+            if (isset($vals['in_retweet_of_post_id'])) {
+                if ($vals['in_retweet_of_post_id'] == '') {
+                    $post_in_retweet_of_post_id = 'NULL';
+                } else {
+                    $post_in_retweet_of_post_id = $vals['in_retweet_of_post_id'];
+                }
+            } else {
+                $post_in_retweet_of_post_id = 'NULL';
+            }
+            if (!isset($vals["network"])) {
+                $vals["network"] = 'twitter';
+            }
+
+            $q = "INSERT INTO #prefix#posts
+                        (post_id,
+                        author_username,author_fullname,author_avatar,author_user_id,
+                        post_text,pub_date,in_reply_to_user_id,in_reply_to_post_id,in_retweet_of_post_id,source,network)
+                    VALUES ( ";
+            $q .= " :post_id, :user_name, :full_name, :avatar, :user_id, :post_text, :pub_date, ";
+            $q .= " :post_in_reply_to_user_id, :post_in_reply_to_post_id, :post_in_retweet_of_post_id, ";
+            $q .= " :source, :network)";
+
+            $vars = array(
+                ':post_id'=>$vals['post_id'],
+                ':user_name'=>$vals['user_name'],
+                ':full_name'=>$vals['full_name'],
+                ':avatar'=>$vals['avatar'],
+                ':user_id'=>$vals['user_id'],
+                ':post_text'=>$vals['post_text'],
+                ':pub_date'=>$vals['pub_date'],
+                ':post_in_reply_to_user_id'=>$post_in_reply_to_user_id,
+                ':post_in_reply_to_post_id'=>$post_in_reply_to_post_id,
+                ':post_in_retweet_of_post_id'=>$post_in_retweet_of_post_id,
+                ':source'=>$vals['source'],
+                ':network'=>$vals['network']
+            );
+            $ps = $this->execute($q, $vars);
+            
+            $logger = Logger::getInstance();
+            if ($vals['in_reply_to_post_id'] != '' && $this->isPostInDB($vals['in_reply_to_post_id'])) {
+                $this->incrementReplyCountCache($vals['in_reply_to_post_id']);
+                $status_message = "Reply found for ".$vals['in_reply_to_post_id'].", ID: ".$vals["post_id"]."; updating reply cache count";
+                $logger->logStatus($status_message, get_class($this));
+            }
+
+            if (isset($vals['in_retweet_of_post_id']) && $vals['in_retweet_of_post_id'] != '' && $this->isPostInDB($vals['in_retweet_of_post_id'])) {
+                $this->incrementRepostCountCache($vals['in_retweet_of_post_id']);
+                $status_message = "Repost of ".$vals['in_retweet_of_post_id']." by ".$vals["user_name"]." ID: ".$vals["post_id"]."; updating retweet cache count";
+                $logger->logStatus($status_message, get_class($this));
+            }
+
+            return $this->getUpdateCount($ps);
+        } else {
+            return 0;
+        }
+    }
+    
     //    function decrementReplyCountCache($post_id) {
     //        $q = "
     //            UPDATE
