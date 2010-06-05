@@ -232,7 +232,7 @@ class TwitterCrawler {
         } elseif ($cURL_status == 404 || $cURL_status == 403) {
             try {
                 $e = $this->api->parseError($twitter_data);
-                $ped = new PostErrorDAO($this->db, $this->logger);
+                $ped = DAOFactory::getDAO('PostErrorDAO');
                 $ped->insertError($tid, $cURL_status, $e['error'], $this->owner_object->user_id);
                 $status_message = 'Error saved to tweets.';
             }
