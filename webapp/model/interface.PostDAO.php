@@ -133,4 +133,37 @@ interface PostDAO {
      * @return array "source"=>"web", "total"=>15
      */
     public function getStatusSources($author_id);
+
+    /**
+     * Get a certain number of mentions of a username on a given network
+     * @param string  $author_username
+     * @param int $count
+     * @param string $network defaults to "twitter"
+     * @return array of Post objects with author and link set
+     */
+    public function getAllMentions($author_username, $count, $network = "twitter");
+
+    /**
+     * Get all replies to a given user ID
+     * @param int $user_id
+     * @param int $count
+     * @return array Posts with author and link set
+     */
+    public function getAllReplies($user_id, $count);
+    
+    /**
+     * Get posts by a user ordered by reply count desc
+     * @param int $user_id
+     * @param int $count
+     * @return array Posts with link object set
+     */
+    public function getMostRepliedToPosts($user_id, $count);
+    
+    /**
+     * Get posts by a usre ordered by retweet count desc
+     * @param int $user_id
+     * @param int $count
+     * @return array Posts with link object set
+     */
+    public function getMostRetweetedPosts($user_id, $count);
 }

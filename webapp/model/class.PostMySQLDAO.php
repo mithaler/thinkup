@@ -9,7 +9,13 @@ require_once 'model/class.PDODAO.php';
 require_once 'model/interface.PostDAO.php';
 
 class PostMySQLDAO extends PDODAO implements PostDAO  {
-    function getPost($post_id) {
+    /**
+     * The minimum number of characters required for fulltext queries.
+     * @var int
+     */
+    const FULLTEXT_CHAR_MINIMUM = 4;
+
+    public function getPost($post_id) {
         $q = "SELECT  p.*, l.id, l.url, l.expanded_url, l.title, l.clicks, l.is_image, l.error, pub_date - interval #gmt_offset# hour as adj_pub_date ";
         $q .= "FROM #prefix#posts p LEFT JOIN #prefix#links l ON l.post_id = p.post_id ";
         $q .= "WHERE p.post_id=:post_id;";
@@ -69,7 +75,7 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
         $q .= " FROM #prefix#posts AS p ";
         $q .= " INNER JOIN #prefix#users AS u ON p.author_user_id = u.user_id WHERE ";
 
-        if ( strlen($username) > 4 ) { //fulltext search only works for words longer than 4 chars
+        if ( strlen($username) > PostMySQLDAO::FULLTEXT_CHAR_MINIMUM ) { //fulltext search only works for words longer than 4 chars
             $q .= " MATCH (`post_text`) AGAINST(:username IN BOOLEAN MODE) ";
         } else {
             $username = '%'.$username .'%';
@@ -326,19 +332,31 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
     }
 
     public function getAllPosts($author_id, $count) {
+        return $this->getAllPostsByUserID($author_id, $count, "pub_date", "DESC");
+    }
+
+    /**
+     * Get all posts by a given user with configurable order by field and direction
+     * @TODO Bind order_by and direction params as strings without single quotes
+     * @param int $author_id
+     * @param int $count
+     * @param string $order_by field name
+     * @param string $direction either "DESC" or "ASC
+     * @return array Posts with link object set
+     */
+    private function getAllPostsByUserID($author_id, $count, $order_by="pub_date", $direction="DESC") {
         $q = "SELECT l.*, p.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
         $q .= " FROM #prefix#posts p";
         $q .= " LEFT JOIN #prefix#links l ";
         $q .= " ON p.post_id = l.post_id ";
         $q .= " WHERE author_user_id = :author_id ";
-        $q .= "ORDER BY pub_date DESC ";
-        $q .= "LIMIT :limit";
+        $q .= " ORDER BY ".$order_by." ".$direction." ";
+        $q .= " LIMIT :limit";
 
         $vars = array(
-                ':author_id'=>$author_id,
-                ':limit'=>$count 
+            ':author_id'=>$author_id,
+            ':limit'=>$count 
         );
-
         $ps = $this->execute($q, $vars);
         $all_rows = $this->getDataRowsAsArrays($ps);
         $posts = array();
@@ -390,104 +408,61 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
         return $this->getDataRowsAsArrays($ps);
     }
 
+    public function getAllMentions($author_username, $count, $network = "twitter") {
+        $author_username = '@'.$author_username;
+        $q = " SELECT l.*, p.*, u.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
+        $q .= " FROM #prefix#posts AS p ";
+        $q .= " INNER JOIN #prefix#users AS u ON p.author_user_id = u.user_id ";
+        $q .= " LEFT JOIN #prefix#links AS l ON p.post_id = l.post_id ";
+        $q .= " WHERE p.network = :network AND";
+        if ( strlen($author_username) > PostMySQLDAO::FULLTEXT_CHAR_MINIMUM ) { //fulltext search only works for words longer than 4 chars
+            $q .= " MATCH (`post_text`) AGAINST(:author_username IN BOOLEAN MODE) ";
+        } else {
+            $author_username = '%'.$author_username .'%';
+            $q .= " post_text LIKE :author_username ";
+        }
+        $q .= " ORDER BY pub_date DESC ";
+        $q .= " LIMIT :limit;";
+        $vars = array(
+            ':author_username'=>$author_username,
+            ':network'=>$network,
+            ':limit'=>$count
+        );
+        $ps = $this->execute($q, $vars);
+        $all_rows = $this->getDataRowsAsArrays($ps);
+        $all_posts = array();
+        foreach ($all_rows as $row) {
+            $all_posts[] = $this->setPostWithAuthorAndLink($row);
+        }
+        return $all_posts;
+    }
 
-    //    function getAllMentions($author_username, $count, $network = "twitter") {
-    //
-    //        $q = " SELECT l.*, t.*, u.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
-    //        $q .= " FROM #prefix#posts AS t ";
-    //        $q .= " INNER JOIN #prefix#users AS u ON t.author_user_id = u.user_id ";
-    //        $q .= " LEFT JOIN #prefix#links AS l ON t.post_id = l.post_id ";
-    //        $q .= ' WHERE t.network = \''.$network.'\'';
-    //        $q .= ' AND MATCH (`post_text`) AGAINST(\'"'.$author_username.'"\' IN BOOLEAN MODE)';
-    //        $q .= " ORDER BY pub_date DESC ";
-    //        $q .= " LIMIT ".$count.";";
-    //        $sql_result = $this->executeSQL($q);
-    //        $all_posts = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $all_posts[] = $this->setPostWithAuthorAndLink($row);
-    //        }
-    //        mysql_free_result($sql_result);
-    //        return $all_posts;
-    //    }
-    //
-    //    function getAllReplies($user_id, $count) {
-    //
-    //        $q = "
-    //            SELECT
-    //                l.*, t.*, u.*, pub_date - interval #gmt_offset# hour as adj_pub_date
-    //            FROM
-    //                #prefix#posts t
-    //            LEFT JOIN
-    //                #prefix#links l
-    //            ON t.post_id = l.post_id
-    //            INNER JOIN
-    //                #prefix#users u
-    //            ON
-    //                t.author_user_id = u.user_id
-    //            WHERE
-    //                 in_reply_to_user_id = ".$user_id."
-    //            ORDER BY
-    //                pub_date DESC
-    //            LIMIT ".$count.";";
-    //        $sql_result = $this->executeSQL($q);
-    //        $all_posts = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $all_posts[] = $this->setPostWithAuthorAndLink($row);
-    //        }
-    //        mysql_free_result($sql_result);
-    //        return $all_posts;
-    //    }
-    //
-    //
-    //    function getMostRepliedToPosts($user_id, $count) {
-    //        $q = "
-    //            SELECT
-    //                l.*, t.* , pub_date - interval #gmt_offset# hour as adj_pub_date
-    //            FROM
-    //                #prefix#posts t
-    //            LEFT JOIN
-    //                #prefix#links l
-    //            ON t.post_id = l.post_id
-    //            WHERE
-    //                author_user_id = ".$user_id."
-    //            ORDER BY
-    //                mention_count_cache DESC
-    //            LIMIT ".$count.";";
-    //        $sql_result = $this->executeSQL($q);
-    //        $most_replied_to_posts = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $most_replied_to_posts[] = $this->setPostWithLink($row);
-    //        }
-    //        mysql_free_result($sql_result);
-    //        return $most_replied_to_posts;
-    //
-    //    }
-    //
-    //    function getMostRetweetedPosts($user_id, $count, $public = false) {
-    //
-    //        $q = "
-    //            SELECT
-    //                l.*, t.* , pub_date - interval #gmt_offset# hour as adj_pub_date
-    //            FROM
-    //                #prefix#posts t
-    //            LEFT JOIN
-    //                #prefix#links l
-    //            ON t.post_id = l.post_id
-    //            WHERE
-    //                author_user_id = ".$user_id."
-    //            ORDER BY
-    //                retweet_count_cache DESC
-    //            LIMIT ".$count.";";
-    //        $sql_result = $this->executeSQL($q);
-    //        $most_retweeted_posts = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $most_retweeted_posts[] = $this->setPostWithLink($row);
-    //        }
-    //        mysql_free_result($sql_result);
-    //        return $most_retweeted_posts;
-    //
-    //    }
-    //
+    public function getAllReplies($user_id, $count) {
+        $q = "SELECT l.*, p.*, u.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
+        $q .= "FROM #prefix#posts p LEFT JOIN #prefix#links l ON p.post_id = l.post_id ";
+        $q .= "INNER JOIN #prefix#users u ON p.author_user_id = u.user_id ";
+        $q .= "WHERE in_reply_to_user_id = :user_id ORDER BY pub_date DESC LIMIT :limit;";
+        $vars = array(
+            ':user_id'=>$user_id,
+            ':limit'=>$count
+        );
+        $ps = $this->execute($q, $vars);
+        $all_rows = $this->getDataRowsAsArrays($ps);
+        $all_posts = array();
+        foreach ($all_rows as $row) {
+            $all_posts[] = $this->setPostWithAuthorAndLink($row);
+        }
+        return $all_posts;
+    }
+
+    public function getMostRepliedToPosts($user_id, $count) {
+        return $this->getAllPostsByUserID($user_id, $count, "mention_count_cache", "DESC");
+    }
+
+    public function getMostRetweetedPosts($user_id, $count) {
+        return $this->getAllPostsByUserID($user_id, $count, "retweet_count_cache", "DESC");
+    }
+
     //    function getOrphanReplies($username, $count, $network = "twitter") {
     //
     //        $q = " SELECT t.* , u.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
