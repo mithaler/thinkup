@@ -150,7 +150,7 @@ interface PostDAO {
      * @return array Posts with author and link set
      */
     public function getAllReplies($user_id, $count);
-    
+
     /**
      * Get posts by a user ordered by reply count desc
      * @param int $user_id
@@ -158,7 +158,7 @@ interface PostDAO {
      * @return array Posts with link object set
      */
     public function getMostRepliedToPosts($user_id, $count);
-    
+
     /**
      * Get posts by a usre ordered by retweet count desc
      * @param int $user_id
@@ -166,4 +166,58 @@ interface PostDAO {
      * @return array Posts with link object set
      */
     public function getMostRetweetedPosts($user_id, $count);
+
+    /**
+     * Get a page of posts by public instances
+     * @param int $page
+     * @param int $count
+     * @return array Posts with link set
+     */
+    public function getPostsByPublicInstances($page, $count);
+
+    /**
+     * Get total posts and pages by public instances
+     * @param int $count Number of posts per page
+     * @return array $row['total_posts'], $row['total_pages']
+     */
+    public function getTotalPagesAndPostsByPublicInstances($count);
+
+    /**
+     * Get photo posts by public instances
+     * @param int $page
+     * @param int $count
+     * @return array posts with link set
+     */
+    public function getPhotoPostsByPublicInstances($page, $count);
+
+    /**
+     * Get total photo posts and pages by public instances
+     * @param int $count number of photo posts per page
+     * @return array Posts with link set
+     */
+    public function getTotalPhotoPagesAndPostsByPublicInstances($count);
+
+    /**
+     * Get link posts by public instances
+     * @param int $page
+     * @param int $count number of posts per page
+     * @return array Posts with link set
+     */
+    public function getLinkPostsByPublicInstances($page, $count);
+
+    /**
+     * Get total link posts and pages by public instances
+     * @param int $count number of posts per page
+     * @return array posts with link set
+     */
+    public function getTotalLinkPagesAndPostsByPublicInstances($count);
+
+    /**
+     * Assign parent replied-to post ID to a given post, and increment/decrement reply count cache totals as needed
+     * @param int $parent_id
+     * @param int $orphan_id
+     * @param int $former_parent_id
+     * @return int total affected rows
+     */
+    public function assignParent($parent_id, $orphan_id, $former_parent_id = -1);
 }

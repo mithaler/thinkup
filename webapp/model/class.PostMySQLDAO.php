@@ -506,48 +506,47 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
     //        return $likely_orphans;
     //
     //    }
-    //
-    //    function assignParent($parent_id, $orphan_id, $former_parent_id = -1) {
-    //
-    //        $post = $this->getPost($orphan_id);
-    //
-    //        // Check for former_parent_id. The current webfront doesn't send this to us
-    //        // We may even want to remove $former_parent_id as a parameter and just look it up here always -FL
-    //        if ($former_parent_id < 0 && isset($post->in_reply_to_post_id) && $this->isPostInDB($post->in_reply_to_post_id)) {
-    //            $former_parent_id = $post->in_reply_to_post_id;
-    //        }
-    //
-    //        $q = "
-    //            UPDATE
-    //                #prefix#posts
-    //            SET
-    //                in_reply_to_post_id = ".$parent_id."
-    //            WHERE
-    //                post_id = ".$orphan_id;
-    //        $this->executeSQL($q);
-    //
-    //
-    //        if ($parent_id > 0) {
-    //            $this->incrementReplyCountCache($parent_id);
-    //        }
-    //        if ($former_parent_id > 0) {
-    //            $this->decrementReplyCountCache($former_parent_id);
-    //        }
-    //        return mysql_affected_rows();
-    //    }
-    //    function decrementReplyCountCache($post_id) {
-    //        $q = "
-    //            UPDATE
-    //                #prefix#posts
-    //            SET
-    //                mention_count_cache = mention_count_cache - 1
-    //            WHERE
-    //                post_id = ".$post_id."
-    //        ";
-    //        $foo = $this->executeSQL($q);
-    //        return mysql_affected_rows();
-    //    }
-    //
+
+    public function assignParent($parent_id, $orphan_id, $former_parent_id = -1) {
+        $post = $this->getPost($orphan_id);
+
+        // Check for former_parent_id. The current webfront doesn't send this to us
+        // We may even want to remove $former_parent_id as a parameter and just look it up here always -FL
+        if ($former_parent_id < 0 && isset($post->in_reply_to_post_id) && $this->isPostInDB($post->in_reply_to_post_id)) {
+            $former_parent_id = $post->in_reply_to_post_id;
+        }
+
+        $q = " UPDATE #prefix#posts SET in_reply_to_post_id = :parent_id ";
+        $q .= "WHERE post_id = :orphan_id ";
+        $vars = array(
+            ':parent_id'=>$parent_id,
+            ':orphan_id'=>$orphan_id
+        );
+        $ps = $this->execute($q, $vars);
+
+        if ($parent_id > 0) {
+            $this->incrementReplyCountCache($parent_id);
+        }
+        if ($former_parent_id > 0) {
+            $this->decrementReplyCountCache($former_parent_id);
+        }
+        return $this->getUpdateCount($ps);
+    }
+    /**
+     * Decrement a post's mention_count_cache
+     * @param int $post_id
+     * @return in count of affected rows
+     */
+    private function decrementReplyCountCache($post_id) {
+        $q = "UPDATE #prefix#posts SET mention_count_cache = mention_count_cache - 1 ";
+        $q .= "WHERE post_id = :post_id";
+        $vars = array(
+            ':post_id'=>$post_id
+        );
+        $ps = $this->execute($q, $vars);
+        return $this->getUpdateCount($ps);
+    }
+
     //
     //    function getStrayRepliedToPosts($author_id) {
     //        $q = "
@@ -567,163 +566,123 @@ class PostMySQLDAO extends PDODAO implements PostDAO  {
     //        mysql_free_result($sql_result);
     //        return $strays;
     //    }
-    //
-    //    private function getPostsByPublicInstancesOrderedBy($page, $count, $orderby) {
-    //        $start_on_record = ($page - 1) * $count;
-    //        $q = "
-    //            SELECT
-    //                l.*, t.*, pub_date - interval #gmt_offset# hour as adj_pub_date
-    //            FROM
-    //                #prefix#posts t
-    //            INNER JOIN
-    //                #prefix#instances i
-    //            ON
-    //                t.author_user_id = i.network_user_id
-    //            LEFT JOIN
-    //                #prefix#links l
-    //            ON t.post_id = l.post_id
-    //
-    //            WHERE
-    //                i.is_public = 1 and (t.mention_count_cache > 0 or t.retweet_count_cache > 0) and in_reply_to_post_id is NULL
-    //            ORDER BY
-    //                t.".$orderby." DESC
-    //            LIMIT ".$start_on_record.", ".$count;
-    //        $sql_result = $this->executeSQL($q);
-    //        $posts = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $posts[] = $this->setPostWithLink($row);
-    //        }
-    //        mysql_free_result($sql_result);
-    //        return $posts;
-    //    }
-    //
-    //    function getTotalPagesAndPostsByPublicInstances($count) {
-    //        $q = "
-    //            SELECT
-    //                count(*) as total_posts, ceil(count(*) / $count) as total_pages
-    //            FROM
-    //                #prefix#posts t
-    //            INNER JOIN
-    //                #prefix#instances i
-    //            ON
-    //                t.author_user_id = i.network_user_id
-    //            LEFT JOIN
-    //                #prefix#links l
-    //            ON t.post_id = l.post_id
-    //
-    //            WHERE
-    //                i.is_public = 1 and (t.mention_count_cache > 0 or t.retweet_count_cache > 0) and in_reply_to_post_id is NULL ";
-    //        $sql_result = $this->executeSQL($q);
-    //        $row = mysql_fetch_assoc($sql_result);
-    //        return $row;
-    //    }
-    //
-    //    function getPostsByPublicInstances($page, $count) {
-    //        return $this->getPostsByPublicInstancesOrderedBy($page, $count, "pub_date");
-    //    }
-    //
-    //    function getPhotoPostsByPublicInstances($page, $count) {
-    //        $start_on_record = ($page - 1) * $count;
-    //        $q = "
-    //            SELECT
-    //                l.*, t.*, pub_date - interval #gmt_offset# hour as adj_pub_date
-    //            FROM
-    //                #prefix#posts t
-    //            INNER JOIN
-    //                #prefix#instances i
-    //            ON
-    //                t.author_user_id = i.network_user_id
-    //            LEFT JOIN
-    //                #prefix#links l
-    //            ON t.post_id = l.post_id
-    //
-    //            WHERE
-    //                i.is_public = 1 and l.is_image = 1
-    //            ORDER BY
-    //                t.pub_date DESC
-    //            LIMIT ".$start_on_record.", ".$count;
-    //        $sql_result = $this->executeSQL($q);
-    //        $posts = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $posts[] = $this->setPostWithLink($row);
-    //        }
-    //        mysql_free_result($sql_result);
-    //        return $posts;
-    //    }
-    //
-    //    function getTotalPhotoPagesAndPostsByPublicInstances($count) {
-    //        $q = "
-    //            SELECT
-    //                                count(*) as total_posts, ceil(count(*) / $count) as total_pages
-    //            FROM
-    //                #prefix#posts t
-    //            INNER JOIN
-    //                #prefix#instances i
-    //            ON
-    //                t.author_user_id = i.network_user_id
-    //            LEFT JOIN
-    //                #prefix#links l
-    //            ON t.post_id = l.post_id
-    //
-    //            WHERE
-    //                i.is_public = 1 and l.is_image = 1
-    //                        ";
-    //        $sql_result = $this->executeSQL($q);
-    //        $row = mysql_fetch_assoc($sql_result);
-    //        return $row;
-    //    }
-    //
-    //    function getLinkPostsByPublicInstances($page, $count) {
-    //        $start_on_record = ($page - 1) * $count;
-    //        $q = "
-    //            SELECT
-    //                l.*, t.*, pub_date - interval #gmt_offset# hour as adj_pub_date
-    //            FROM
-    //                #prefix#posts t
-    //            INNER JOIN
-    //                #prefix#instances i
-    //            ON
-    //                t.author_user_id = i.network_user_id
-    //            LEFT JOIN
-    //                #prefix#links l
-    //            ON t.post_id = l.post_id
-    //
-    //            WHERE
-    //                i.is_public = 1 and l.expanded_url != '' and l.is_image = 0
-    //            ORDER BY
-    //                t.pub_date DESC
-    //            LIMIT ".$start_on_record.", ".$count;
-    //        $sql_result = $this->executeSQL($q);
-    //        $posts = array();
-    //        while ($row = mysql_fetch_assoc($sql_result)) {
-    //            $posts[] = $this->setPostWithLink($row);
-    //        }
-    //        mysql_free_result($sql_result);
-    //        return $posts;
-    //    }
-    //
-    //    function getTotalLinkPagesAndPostsByPublicInstances($count) {
-    //        $q = "
-    //            SELECT
-    //                                count(*) as total_posts, ceil(count(*) / $count) as total_pages
-    //            FROM
-    //                #prefix#posts t
-    //            INNER JOIN
-    //                #prefix#instances i
-    //            ON
-    //                t.author_user_id = i.network_user_id
-    //            LEFT JOIN
-    //                #prefix#links l
-    //            ON t.post_id = l.post_id
-    //
-    //            WHERE
-    //                i.is_public = 1 and l.expanded_url != '' and l.is_image = 0
-    //                        ";
-    //        $sql_result = $this->executeSQL($q);
-    //        $row = mysql_fetch_assoc($sql_result);
-    //        return $row;
-    //    }
-    //
+
+    /**
+     * Get posts by public instances with custom sort order
+     * @TODO bind $order_by and $start_on_record as int
+     * @param int $page
+     * @param int $count
+     * @param string $order_by field name
+     * @return array Posts with link set
+     */
+    private function getPostsByPublicInstancesOrderedBy($page, $count, $order_by) {
+        $start_on_record = ($page - 1) * $count;
+        $q = "SELECT l.*, p.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
+        $q .= "FROM #prefix#posts p INNER JOIN #prefix#instances i ";
+        $q .= "ON p.author_user_id = i.network_user_id ";
+        $q .= "LEFT JOIN #prefix#links l ON p.post_id = l.post_id ";
+        $q .= "WHERE i.is_public = 1 and (p.mention_count_cache > 0 or p.retweet_count_cache > 0) and in_reply_to_post_id is NULL ";
+        $q .= "ORDER BY p.".$order_by." DESC ";
+        $q .= "LIMIT ".$start_on_record.", :limit";
+        $vars = array(
+            ':limit'=>$count
+        );
+
+        $ps = $this->execute($q, $vars);
+        $all_rows = $this->getDataRowsAsArrays($ps);
+        $all_posts = array();
+        foreach ($all_rows as $row) {
+            $all_posts[] = $this->setPostWithLink($row);
+        }
+        return $all_posts;
+    }
+
+    /**
+     * @TODO Bind $count var as int
+     */
+    public function getTotalPagesAndPostsByPublicInstances($count) {
+        $q = "SELECT count(*) as total_posts, ceil(count(*) / $count) as total_pages ";
+        $q .= "FROM #prefix#posts p INNER JOIN #prefix#instances i ";
+        $q .= "ON p.author_user_id = i.network_user_id LEFT JOIN #prefix#links l ";
+        $q .= "ON p.post_id = l.post_id ";
+        $q .= "WHERE i.is_public = 1 and (p.mention_count_cache > 0 or p.retweet_count_cache > 0) and in_reply_to_post_id is NULL ";
+
+        $ps = $this->execute($q);
+        return $this->getDataRowAsArray($ps);
+    }
+
+    public function getPostsByPublicInstances($page, $count) {
+        return $this->getPostsByPublicInstancesOrderedBy($page, $count, "pub_date");
+    }
+
+    /**
+     * @TODO Bind $start_on_record var as int
+     */
+    public function getPhotoPostsByPublicInstances($page, $count) {
+        $start_on_record = ($page - 1) * $count;
+        $q = "SELECT l.*, p.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
+        $q .= "FROM #prefix#posts p INNER JOIN #prefix#instances i ON p.author_user_id = i.network_user_id ";
+        $q .= "LEFT JOIN #prefix#links l ON p.post_id = l.post_id WHERE i.is_public = 1 and l.is_image = 1 ";
+        $q .= "ORDER BY p.pub_date DESC ";
+        $q .= "LIMIT ".$start_on_record.", :limit";
+        $vars = array(
+            ':limit'=>$count
+        );
+
+        $ps = $this->execute($q, $vars);
+        $all_rows = $this->getDataRowsAsArrays($ps);
+        $all_posts = array();
+        foreach ($all_rows as $row) {
+            $all_posts[] = $this->setPostWithLink($row);
+        }
+        return $all_posts;
+    }
+
+    /**
+     * @TODO Bind $count var as int
+     */
+    public function getTotalPhotoPagesAndPostsByPublicInstances($count) {
+        $q = "SELECT count(*) as total_posts, ceil(count(*) / $count) as total_pages ";
+        $q .= "FROM #prefix#posts p INNER JOIN #prefix#instances i ON p.author_user_id = i.network_user_id ";
+        $q .= "LEFT JOIN #prefix#links l ON p.post_id = l.post_id WHERE i.is_public = 1 and l.is_image = 1 ";
+
+        $ps = $this->execute($q);
+        return $this->getDataRowAsArray($ps);
+    }
+
+    /**
+     * @TODO Bind $start_on_record var as int
+     */
+    public function getLinkPostsByPublicInstances($page, $count) {
+        $start_on_record = ($page - 1) * $count;
+        $q = "SELECT l.*, p.*, pub_date - interval #gmt_offset# hour as adj_pub_date ";
+        $q .= " FROM #prefix#posts p INNER JOIN #prefix#instances i ";
+        $q .= "ON p.author_user_id = i.network_user_id LEFT JOIN #prefix#links l ON p.post_id = l.post_id ";
+        $q .= "WHERE i.is_public = 1 and l.expanded_url != '' and l.is_image = 0 ORDER BY p.pub_date DESC ";
+        $q .= "LIMIT ".$start_on_record.", :limit ";
+        $vars = array(
+            ':limit'=>$count
+        );
+        $ps = $this->execute($q, $vars);
+        $all_rows = $this->getDataRowsAsArrays($ps);
+        $all_posts = array();
+        foreach ($all_rows as $row) {
+            $all_posts[] = $this->setPostWithLink($row);
+        }
+        return $all_posts;
+    }
+
+    /**
+     * @TODO Bind $count var as int
+     */
+    public function getTotalLinkPagesAndPostsByPublicInstances($count) {
+        $q = "SELECT count(*) as total_posts, ceil(count(*) / $count) as total_pages ";
+        $q .= "FROM #prefix#posts p INNER JOIN #prefix#instances i ON p.author_user_id = i.network_user_id ";
+        $q .= "LEFT JOIN #prefix#links l ON p.post_id = l.post_id WHERE i.is_public = 1 and l.expanded_url != '' and l.is_image = 0 ";
+        $ps = $this->execute($q);
+        return $this->getDataRowAsArray($ps);
+    }
+
     //    function getMostRepliedToPostsByPublicInstances($page, $count) {
     //        return $this->getPostsByPublicInstancesOrderedBy($page, $count, "mention_count_cache");
     //    }
