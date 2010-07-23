@@ -8,10 +8,9 @@
 class ForgotPasswordController extends ThinkTankController implements Controller {
 
     public function control() {
-        $session = new Session();
 
         if (isset($_POST['Submit']) && $_POST['Submit'] == 'Send') {
-            $this->view_mgr->caching = false;
+            $this->disableCaching();
 
             $dao = DAOFactory::getDAO('OwnerDAO');
             if ($user = $dao->getByEmail($_POST['email'])) {
@@ -29,19 +28,13 @@ class ForgotPasswordController extends ThinkTankController implements Controller
 
                 Mailer::mail($_POST['email'], $config->getValue('app_title') . " Password Recovery", $message);
 
-                $successmsg = "Password recovery information has been sent to your email address.";
+                $this->addToView('successmsg', 'Password recovery information has been sent to your email address.');
             } else {
-                $errormsg = "Error: account does not exist.";
+                $this->addToView('errormsg', 'Error: account does not exist.');
             }
         }
 
         $this->setViewTemplate('session.forgot.tpl');
-
-        if (isset($errormsg)) {
-            $this->addToView('errormsg', $errormsg);
-        } elseif (isset($successmsg)) {
-            $this->addToView('successmsg', $successmsg);
-        }
 
         return $this->generateView();
     }

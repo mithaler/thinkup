@@ -10,9 +10,20 @@ require_once 'model/interface.OwnerDAO.php';
 class OwnerMySQLDAO extends PDODAO implements OwnerDAO {
 
     public function getByEmail($email) {
-        $q = " SELECT o.id AS id, o.user_name AS user_name, o.full_name AS full_name, o.user_email AS user_email, is_admin, last_login, user_activated as is_activated, password_token ";
-        $q .= " FROM #prefix#owners AS o ";
-        $q .= " WHERE o.user_email = :email;";
+        $q = <<<SQL
+SELECT
+    o.id AS id,
+    o.user_name AS user_name,
+    o.full_name AS full_name,
+    o.user_email AS user_email,
+    is_admin,
+    last_login,
+    user_activated as is_activated,
+    password_token
+FROM #prefix#owners AS o
+WHERE o.user_email = :email;
+SQL;
+
         $vars = array(
             ':email'=>$email
         );
@@ -21,7 +32,17 @@ class OwnerMySQLDAO extends PDODAO implements OwnerDAO {
     }
 
     public function getAllOwners() {
-        $q = " SELECT id, full_name, email, is_admin, last_login FROM #prefix#owners ORDER BY last_login DESC;";
+        $q = <<<SQL
+SELECT
+    o.id AS id,
+    o.user_name AS user_name,
+    o.full_name AS full_name,
+    o.user_email AS user_email,
+    is_admin,
+    last_login
+FROM #prefix#owners AS o
+ORDER BY last_login DESC
+SQL;
         $ps = $this->execute($q);
         return $this->getDataRowsAsObjects($ps, 'Owner');
     }

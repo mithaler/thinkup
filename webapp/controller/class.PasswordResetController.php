@@ -6,6 +6,8 @@
  * @author Michael Louis Thaler <michael.louis.thaler[at]gmail[dot]com>
  */
 
+require_once 'class.LoginController.php';
+
 class PasswordResetController extends ThinkTankController implements Controller {
 
     public function control() {
@@ -13,7 +15,7 @@ class PasswordResetController extends ThinkTankController implements Controller 
         $dao = DAOFactory::getDAO('OwnerDAO');
 
         $this->setViewTemplate('session.resetpassword.tpl');
-        $this->view_mgr->caching = false;
+        $this->disableCaching();
 
         if (!isset($_GET['token']) ||
             !preg_match('/^[\da-f]{32}$/', $_GET['token']) ||
@@ -30,8 +32,9 @@ class PasswordResetController extends ThinkTankController implements Controller 
 
         if (isset($_POST['password']) && $_POST['password'] && $_POST['password'] == $_POST['password_confirm']) {
             $dao->updatePassword($user->user_email, $session->pwdcrypt($_POST['password']));
-            header('Location: login.php?smsg=You+have+successfully+changed+your+password.');
-            return;
+            $login_controller = new LoginController(true);
+            $login_controller->addToView('successmsg', 'You have changed your password.');
+            return $login_controller->go();
         } else if (isset($_POST['Submit'])) {
             $this->addToView('errormsg', 'Please enter a new password.');
         }
