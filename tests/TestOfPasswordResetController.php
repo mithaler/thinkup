@@ -6,11 +6,14 @@ ini_set("include_path", ini_get("include_path").PATH_SEPARATOR.$INCLUDE_PATH);
 require_once $SOURCE_ROOT_PATH.'tests/classes/class.ThinkTankBasicUnitTestCase.php';
 require_once $SOURCE_ROOT_PATH.'webapp/controller/interface.Controller.php';
 require_once $SOURCE_ROOT_PATH.'webapp/controller/class.ThinkTankController.php';
-require_once $SOURCE_ROOT_PATH.'webapp/controller/class.ThinkTankAuthController.php';
-require_once $SOURCE_ROOT_PATH.'tests/classes/class.TestAuthController.php';
+require_once $SOURCE_ROOT_PATH.'webapp/controller/class.PasswordResetController.php';
 require_once $SOURCE_ROOT_PATH.'extlib/Smarty-2.6.26/libs/Smarty.class.php';
 require_once $SOURCE_ROOT_PATH.'webapp/model/class.SmartyThinkTank.php';
 require_once $SOURCE_ROOT_PATH.'webapp/model/class.Config.php';
+require_once $SOURCE_ROOT_PATH.'webapp/model/class.Owner.php';
+require_once $SOURCE_ROOT_PATH.'webapp/model/class.OwnerInstance.php';
+require_once $SOURCE_ROOT_PATH.'webapp/model/class.Instance.php';
+require_once $SOURCE_ROOT_PATH.'webapp/model/class.DAOFactory.php';
 require_once $SOURCE_ROOT_PATH.'webapp/config.inc.php';
 //require_once $SOURCE_ROOT_PATH.'webapp/model/class.OwnerMySQLDAO.php';
 
@@ -65,7 +68,7 @@ SQL;
         $expired_time = strtotime('-2 days');
         $q = <<<SQL
 UPDATE tt_owners
-SET password_token = '{$token}_{$expired_time}'
+SET password_token = '{$this->token}_{$expired_time}'
 WHERE id = 1;
 SQL;
         $this->db->exec($q);
@@ -76,6 +79,64 @@ SQL;
 
         $v_mgr = $controller->getViewManager();
         $this->assertEqual($v_mgr->getTemplateDataItem('errormsg'), 'Your token is expired.');
+    }
+
+    function testOfControllerGoodToken() {
+        $time = strtotime('-1 hour');
+        $q = <<<SQL
+UPDATE tt_owners
+SET password_token = '{$this->token}_{$time}'
+WHERE id = 1;
+SQL;
+        $this->db->exec($q);
+
+        $_GET['token'] = $this->token;
+        $controller = new PasswordResetController();
+        $result = $controller->go();
+
+        $v_mgr = $controller->getViewManager();
+        $this->assertNull($v_mgr->getTemplateDataItem('errormsg'));
+        $this->assertNull($v_mgr->getTemplateDataItem('successmsg'));
+    }
+
+    function testOfControllerGoodTokenMismatchedPassword() {
+        $time = strtotime('-1 hour');
+        $q = <<<SQL
+UPDATE tt_owners
+SET password_token = '{$this->token}_{$time}'
+WHERE id = 1;
+SQL;
+        $this->db->exec($q);
+
+        $_POST['password'] = 'not';
+        $_POST['password_confirm'] = 'the same';
+        $_GET['token'] = $this->token;
+        $controller = new PasswordResetController();
+        $result = $controller->go();
+
+        $v_mgr = $controller->getViewManager();
+        $this->assertEqual($v_mgr->getTemplateDataItem('errormsg', "Passwords didn't match."));
+    }
+
+    function testOfControllerGoodTokenMatchedNewPassword() {
+        $time = strtotime('-1 hour');
+        $q = <<<SQL
+UPDATE tt_owners
+SET password_token = '{$this->token}_{$time}'
+WHERE id = 1;
+SQL;
+        $this->db->exec($q);
+
+        $_POST['password'] = 'the same';
+        $_POST['password_confirm'] = 'the same';
+        $_GET['token'] = $this->token;
+        $controller = new PasswordResetController();
+        $result = $controller->go();
+
+        $dao = DAOFactory::getDAO('OwnerDAO');
+        $this->owner = $dao->getForLogin('me@example.com');
+
+        $this->assertEqual($_POST['password'], $this->owner['user_pwd']);
     }
 
 }
