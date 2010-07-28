@@ -30,11 +30,15 @@ class PasswordResetController extends ThinkTankController implements Controller 
             return $this->generateView();
         }
 
-        if (isset($_POST['password']) && $_POST['password'] && $_POST['password'] == $_POST['password_confirm']) {
-            $dao->updatePassword($user->user_email, $session->pwdcrypt($_POST['password']));
-            $login_controller = new LoginController(true);
-            $login_controller->addToView('successmsg', 'You have changed your password.');
-            return $login_controller->go();
+        if (isset($_POST['password']) && $_POST['password']) {
+            if ($_POST['password'] == $_POST['password_confirm']) {
+                $dao->updatePassword($user->user_email, $session->pwdcrypt($_POST['password']));
+                $login_controller = new LoginController(true);
+                $login_controller->addToView('successmsg', 'You have changed your password.');
+                return $login_controller->go();
+            } else {
+                $this->addToView('errormsg', "Passwords didn't match.");
+            }
         } else if (isset($_POST['Submit'])) {
             $this->addToView('errormsg', 'Please enter a new password.');
         }
