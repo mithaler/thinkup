@@ -81,7 +81,7 @@ class Owner {
     public function setPasswordRecoveryToken() {
         $token = md5(uniqid(rand()));
         $dao = DAOFactory::getDAO('OwnerDAO');
-        $dao->updatePasswordToken($token . '_' . time(), $this->user_email);
+        $dao->updatePasswordToken($token . '_' . time(), $this->email);
         return $token;
     }
 

@@ -5,7 +5,7 @@
  * @author Michael Louis Thaler <michael.louis.thaler[at]gmail[dot]com>
  */
 
-class ForgotPasswordController extends ThinkUpController implements Controller {
+class ForgotPasswordController extends ThinkUpController {
 
     public function control() {
 
