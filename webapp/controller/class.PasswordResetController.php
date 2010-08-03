@@ -8,7 +8,7 @@
 
 require_once 'class.LoginController.php';
 
-class PasswordResetController extends ThinkUpController implements Controller {
+class PasswordResetController extends ThinkUpController {
 
     public function control() {
         $session = new Session();
@@ -32,7 +32,7 @@ class PasswordResetController extends ThinkUpController implements Controller {
 
         if (isset($_POST['password']) && $_POST['password']) {
             if ($_POST['password'] == $_POST['password_confirm']) {
-                $dao->updatePassword($user->user_email, $session->pwdcrypt($_POST['password']));
+                $dao->updatePassword($user->email, $session->pwdcrypt($_POST['password']));
                 $login_controller = new LoginController(true);
                 $login_controller->addToView('successmsg', 'You have changed your password.');
                 return $login_controller->go();

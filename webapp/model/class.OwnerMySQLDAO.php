@@ -12,16 +12,15 @@ class OwnerMySQLDAO extends PDODAO implements OwnerDAO {
     public function getByEmail($email) {
         $q = <<<SQL
 SELECT
-    o.id AS id,
-    o.user_name AS user_name,
-    o.full_name AS full_name,
-    o.user_email AS user_email,
+    id,
+    full_name,
+    email,
     is_admin,
     last_login,
-    user_activated as is_activated,
+    is_activated,
     password_token
 FROM #prefix#owners AS o
-WHERE o.user_email = :email;
+WHERE email = :email;
 SQL;
 
         $vars = array(
@@ -34,10 +33,9 @@ SQL;
     public function getAllOwners() {
         $q = <<<SQL
 SELECT
-    o.id AS id,
-    o.user_name AS user_name,
-    o.full_name AS full_name,
-    o.user_email AS user_email,
+    id,
+    full_name,
+    email,
     is_admin,
     last_login
 FROM #prefix#owners AS o
@@ -127,7 +125,7 @@ SQL;
     public function updatePasswordToken($token, $email) {
         $q = "UPDATE #prefix#owners
               SET password_token=:token
-              WHERE user_email=:email";
+              WHERE email=:email";
 
         $vars = array(":token" => $token, ":email" => $email);
         $ps = $this->execute($q, $vars);
