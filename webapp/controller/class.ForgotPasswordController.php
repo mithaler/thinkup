@@ -5,7 +5,7 @@
  * @author Michael Louis Thaler <michael.louis.thaler[at]gmail[dot]com>
  */
 
-class ForgotPasswordController extends ThinkTankController implements Controller {
+class ForgotPasswordController extends ThinkUpController implements Controller {
 
     public function control() {
 
@@ -16,7 +16,7 @@ class ForgotPasswordController extends ThinkTankController implements Controller
             if ($user = $dao->getByEmail($_POST['email'])) {
                 $token = $user->setPasswordRecoveryToken();
 
-                $es = new SmartyThinkTank();
+                $es = new SmartyThinkUp();
                 $es->caching=false;
 
                 $config = Config::getInstance();

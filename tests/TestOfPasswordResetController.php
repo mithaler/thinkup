@@ -3,12 +3,12 @@ require_once dirname(__FILE__).'/config.tests.inc.php';
 require_once $SOURCE_ROOT_PATH.'extlib/simpletest/autorun.php';
 ini_set("include_path", ini_get("include_path").PATH_SEPARATOR.$INCLUDE_PATH);
 
-require_once $SOURCE_ROOT_PATH.'tests/classes/class.ThinkTankBasicUnitTestCase.php';
+require_once $SOURCE_ROOT_PATH.'tests/classes/class.ThinkUpBasicUnitTestCase.php';
 require_once $SOURCE_ROOT_PATH.'webapp/controller/interface.Controller.php';
-require_once $SOURCE_ROOT_PATH.'webapp/controller/class.ThinkTankController.php';
+require_once $SOURCE_ROOT_PATH.'webapp/controller/class.ThinkUpController.php';
 require_once $SOURCE_ROOT_PATH.'webapp/controller/class.PasswordResetController.php';
 require_once $SOURCE_ROOT_PATH.'extlib/Smarty-2.6.26/libs/Smarty.class.php';
-require_once $SOURCE_ROOT_PATH.'webapp/model/class.SmartyThinkTank.php';
+require_once $SOURCE_ROOT_PATH.'webapp/model/class.SmartyThinkUp.php';
 require_once $SOURCE_ROOT_PATH.'webapp/model/class.Config.php';
 require_once $SOURCE_ROOT_PATH.'webapp/model/class.Owner.php';
 require_once $SOURCE_ROOT_PATH.'webapp/model/class.OwnerInstance.php';
@@ -20,7 +20,7 @@ require_once $SOURCE_ROOT_PATH.'webapp/config.inc.php';
 /**
  * Test PasswordResetController class
  */
-class TestOfPasswordResetController extends ThinkTankBasicUnitTestCase {
+class TestOfPasswordResetController extends ThinkUpBasicUnitTestCase {
     protected $owner;
     protected $token;
 
@@ -40,8 +40,8 @@ class TestOfPasswordResetController extends ThinkTankBasicUnitTestCase {
         $q = <<<SQL
 INSERT INTO tt_owners SET
     id = 1,
-    user_name = 'ThinkTankUser',
-    full_name = 'ThinkTank J. User',
+    user_name = 'ThinkUpUser',
+    full_name = 'ThinkUp J. User',
     user_email = 'me@example.com',
     user_activated = 1,
     user_pwd = '$cryptpass',

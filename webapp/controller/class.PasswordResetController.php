@@ -8,7 +8,7 @@
 
 require_once 'class.LoginController.php';
 
-class PasswordResetController extends ThinkTankController implements Controller {
+class PasswordResetController extends ThinkUpController implements Controller {
 
     public function control() {
         $session = new Session();
